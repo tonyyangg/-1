@@ -3,21 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>台股加權指數 (TAIEX) 分析系統</title>
-    <!-- 引入 Chart.js 以呈現第一頁與第三頁的圖表 -->
+    <title>台灣加權指數 (TAIEX) 當沖分析系統 & Pivot 關卡儀表板</title>
+    <!-- Chart.js 圖表庫 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * { box-sizing: border-box; }
-        body { background-color: #0b0f17; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 20px; }
+        body { background-color: #0d1117; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 0; padding: 20px; }
         .max-w-7xl { max-width: 1400px; margin: 0 auto; }
         
         /* 頁籤導航 */
-        .nav-tabs { display: flex; gap: 16px; border-bottom: 1px solid #21262d; margin-bottom: 20px; padding-bottom: 8px; overflow-x: auto; }
-        .tab-btn { background: none; border: none; color: #8b949e; cursor: pointer; padding: 8px 12px; font-size: 0.95rem; font-weight: 600; border-bottom: 2px solid transparent; whitespace: nowrap; }
-        .tab-btn.active { border-bottom: 2px solid #388bfd; color: #58a6ff; }
+        .nav-tabs { display: flex; gap: 12px; border-bottom: 1px solid #30363d; margin-bottom: 20px; padding-bottom: 8px; overflow-x: auto; }
+        .tab-btn { background: #161b22; border: 1px solid #30363d; color: #8b949e; cursor: pointer; padding: 10px 16px; font-size: 0.9rem; font-weight: 600; border-radius: 6px; whitespace: nowrap; transition: all 0.2s ease; }
+        .tab-btn:hover { color: #f0f6fc; border-color: #8b949e; }
+        .tab-btn.active { background: #1f6beb; border-color: #388bfd; color: #ffffff; box-shadow: 0 0 10px rgba(31, 107, 235, 0.4); }
 
         /* 卡片玻璃質感容器 */
-        .glass-panel { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 18px; margin-bottom: 16px; }
+        .glass-panel { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 18px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
         
         /* 第一頁版面：左 1 右 2 */
         .grid-dashboard { display: grid; grid-template-columns: 340px 1fr; gap: 16px; }
@@ -28,6 +29,7 @@
         
         /* Pivot 5 關卡卡片 */
         .pivot-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 16px; margin-bottom: 16px; }
+        @media (max-width: 640px) { .pivot-grid { grid-template-columns: repeat(2, 1fr); } }
         .pivot-card { padding: 10px; border-radius: 6px; text-align: center; border: 1px solid transparent; }
         .pivot-card .label { font-size: 0.7rem; font-weight: bold; margin-bottom: 4px; }
         .pivot-card .val { font-size: 1.1rem; font-weight: 800; }
@@ -41,8 +43,9 @@
 
         /* 輸入框與按鈕 */
         input[type="number"] { background: #0d1117; border: 1px solid #30363d; color: white; padding: 6px; border-radius: 4px; width: 100%; font-size: 0.8rem; }
-        .btn-blue { width: 100%; padding: 8px; background: #1f6beb; color: white; border-radius: 6px; border: none; font-weight: 600; font-size: 0.8rem; cursor: pointer; margin-top: 8px; }
-        .btn-copy { background: #238636; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+        .btn-blue { width: 100%; padding: 8px; background: #1f6beb; color: white; border-radius: 6px; border: none; font-weight: 600; font-size: 0.8rem; cursor: pointer; margin-top: 8px; transition: background 0.2s; }
+        .btn-blue:hover { background: #388bfd; }
+        .btn-copy { background: #238636; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: background 0.2s; }
         .btn-copy:hover { background: #2ea043; }
         
         /* 表格樣式 */
@@ -56,12 +59,17 @@
         .sop-card { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 14px; position: relative; }
         .sop-step { font-size: 0.75rem; font-weight: bold; color: #58a6ff; margin-bottom: 4px; text-transform: uppercase; }
         .strategy-card { background: #0d1117; border-left: 4px solid #388bfd; border-radius: 6px; padding: 14px; margin-bottom: 12px; }
+        
+        /* API 狀態標籤 */
+        .status-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: bold; }
+        .status-online { background: rgba(52, 211, 153, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
+        .status-loading { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
     </style>
 </head>
 <body>
 
     <div class="max-w-7xl">
-        <!-- 頂部頁籤 -->
+        <!-- 頁籤導航 -->
         <nav class="nav-tabs">
             <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn active">📊 大盤總覽與 AI 交易建議</button>
             <button onclick="switchTab('chips')" id="tab-chips" class="tab-btn">📋 期貨籌碼與融資</button>
@@ -80,7 +88,7 @@
                         🟠 當沖即時動態指標 (Real-time)
                     </h3>
                     
-                    <!-- 期現貨價差/逆價差 (Basis) -->
+                    <!-- 期現貨價差 (Basis) -->
                     <div style="background:#0d1117; padding:10px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
                         <div>
                             <div style="font-size:0.7rem; color:#8b949e;">期現貨價差 (Basis)</div>
@@ -89,7 +97,7 @@
                         <span style="background:#064e3b; color:#34d399; font-size:0.75rem; padding:2px 6px; border-radius:4px;" id="basis-tag">正價差 (偏多)</span>
                     </div>
 
-                    <!-- 預估成交量與暴量警告 -->
+                    <!-- 大盤預估成交量 -->
                     <div style="background:#0d1117; padding:10px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
                         <div>
                             <div style="font-size:0.7rem; color:#8b949e;">大盤預估成交量</div>
@@ -98,7 +106,7 @@
                         <span style="background:#78350f; color:#fcd34d; font-size:0.75rem; padding:2px 6px; border-radius:4px;" id="vol-tag">出量突破預警</span>
                     </div>
 
-                    <!-- 夜盤/日盤跳空缺口 (Gap) -->
+                    <!-- 夜盤跳空缺口 -->
                     <div style="background:#0d1117; padding:10px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
                         <div>
                             <div style="font-size:0.7rem; color:#8b949e;">夜盤跳空缺口 (Night Gap)</div>
@@ -119,33 +127,37 @@
                         </div>
                     </div>
 
-                    <div style="font-size:0.7rem; color:#8b949e; text-align:right; margin-top:6px;" id="api-status">
-                        FinMind 連線狀態：更新中...
+                    <!-- 狀態指示器 -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; font-size:0.7rem;">
+                        <span style="color:#8b949e;">FinMind 數據源：</span>
+                        <div id="api-status-badge" class="status-badge status-loading">
+                            ⚡ 連線嘗試中...
+                        </div>
                     </div>
                 </div>
 
-                <!-- 換回：台積電 (2330) 權量關卡 (包含第一與第二壓力) -->
+                <!-- 台積電 (2330) 權量關卡 -->
                 <div class="glass-panel">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                         <h3 style="font-size:0.9rem; margin:0; color:#f0f6fc;">🪙 台積電 (2330) 權量關卡</h3>
-                        <span style="font-size:0.7rem; color:#8b949e;">收盤: $2470.0</span>
+                        <span style="font-size:0.7rem; color:#8b949e;">參考收盤: $2,470.0</span>
                     </div>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
                         <div class="pivot-card card-s2">
                             <div class="label">第二支撐 (S2)</div>
-                            <div class="val" id="tsmc-s2">$2440.0</div>
+                            <div class="val" id="tsmc-s2">$2,440.0</div>
                         </div>
                         <div class="pivot-card card-s1">
                             <div class="label">第一支撐 (S1)</div>
-                            <div class="val" id="tsmc-s1">$2455.7</div>
+                            <div class="val" id="tsmc-s1">$2,455.7</div>
                         </div>
                         <div class="pivot-card card-r1">
                             <div class="label">第一壓力 (R1)</div>
-                            <div class="val" id="tsmc-r1">$2485.7</div>
+                            <div class="val" id="tsmc-r1">$2,485.7</div>
                         </div>
                         <div class="pivot-card card-r2">
                             <div class="label">第二壓力 (R2)</div>
-                            <div class="val" id="tsmc-r2">$2500.0</div>
+                            <div class="val" id="tsmc-r2">$2,500.0</div>
                         </div>
                     </div>
                 </div>
@@ -156,8 +168,8 @@
                         <h3 style="font-size:0.9rem; margin:0; color:#f0f6fc;">⚡ 手動 / 夜盤 Pivot 計算器</h3>
                         <input type="checkbox" id="manual-toggle" onchange="toggleManual()">
                     </div>
-                    <p style="font-size:0.75rem; color:#8b949e; margin:0 0 10px 0;">可供自訂輸入夜盤高低收估算夜盤，H/L/C 進行計算：</p>
-                    <div id="manual-form" style="opacity:0.4; pointer-events:none;">
+                    <p style="font-size:0.75rem; color:#8b949e; margin:0 0 10px 0;">自訂夜盤高低收 (H/L/C) 試算最新關卡：</p>
+                    <div id="manual-form" style="opacity:0.4; pointer-events:none; transition:opacity 0.2s;">
                         <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;">
                             <div><div style="font-size:0.65rem; color:#8b949e;">夜高 (High)</div><input type="number" id="m-h" placeholder="最高"></div>
                             <div><div style="font-size:0.65rem; color:#8b949e;">夜低 (Low)</div><input type="number" id="m-l" placeholder="最低"></div>
@@ -172,14 +184,19 @@
             <div>
                 <!-- 警告 Banner -->
                 <div class="alert-banner">
-                    ⚠️ <b>大盤接近 FinMind 樞紐中心！</b> 宜密密切關注多空水嶺關鍵卡位，多空攻防加劇！
+                    ⚠️ <b>大盤接近 Pivot 樞紐中心！</b> 宜密切關注多空分水嶺攻防防守，觀察量能決定卡位劇本。
                 </div>
 
                 <!-- 主指數與 Pivot 五關卡 -->
                 <div class="glass-panel">
                     <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                         <div>
-                            <div style="font-size:0.8rem; color:#8b949e;">TAIEX 加權指數 (FINMIND: TAIEX) <span style="background:#064e3b; color:#34d399; font-size:0.65rem; padding:1px 4px; border-radius:3px;">FinMind API 自動連線</span></div>
+                            <div style="font-size:0.8rem; color:#8b949e;">
+                                TAIEX 加權指數 
+                                <span id="data-source-tag" style="background:#064e3b; color:#34d399; font-size:0.65rem; padding:1px 6px; border-radius:3px; margin-left:6px;">
+                                    FinMind CORS Proxy 連線
+                                </span>
+                            </div>
                             <div style="display:flex; align-items:baseline; gap:12px; margin-top:4px;">
                                 <span style="font-size:2.2rem; font-weight:900; color:white;" id="main-price">48,024.60</span>
                                 <span style="font-size:1.1rem; font-weight:bold; color:#f87171;" id="main-change">-132.69 (-0.28%)</span>
@@ -189,51 +206,52 @@
                             <div>最高: <span style="color:#f87171;" id="main-high">48,117.54</span></div>
                             <div>最低: <span style="color:#34d399;" id="main-low">47,754.72</span></div>
                             <div>昨收: <span id="main-prev">48,157.29</span></div>
+                            <div style="font-size:0.65rem; color:#58a6ff; margin-top:2px;" id="data-date">更新日期: 加載中...</div>
                         </div>
                     </div>
 
-                    <!-- 五關卡點位 (S2, S1, Pivot, R1, R2) -->
+                    <!-- 五關卡點位 -->
                     <div class="pivot-grid">
                         <div class="pivot-card card-s2">
                             <div class="label">第二支撐 (S2)</div>
-                            <div class="val" id="val-s2">47602.9</div>
+                            <div class="val" id="val-s2">47,602.9</div>
                         </div>
                         <div class="pivot-card card-s1">
                             <div class="label">第一支撐 (S1)</div>
-                            <div class="val" id="val-s1">47813.7</div>
+                            <div class="val" id="val-s1">47,813.7</div>
                         </div>
                         <div class="pivot-card card-p">
                             <div class="label">樞紐中心 (P)</div>
-                            <div class="val" id="val-p">47965.6</div>
+                            <div class="val" id="val-p">47,965.6</div>
                         </div>
                         <div class="pivot-card card-r1">
                             <div class="label">第一壓力 (R1)</div>
-                            <div class="val" id="val-r1">48176.5</div>
+                            <div class="val" id="val-r1">48,176.5</div>
                         </div>
                         <div class="pivot-card card-r2">
                             <div class="label">第二壓力 (R2)</div>
-                            <div class="val" id="val-r2">48328.4</div>
+                            <div class="val" id="val-r2">48,328.4</div>
                         </div>
                     </div>
 
                     <!-- 選擇權莊家防守牆 -->
                     <div style="background:#0d1117; padding:12px; border-radius:6px; border:1px solid #21262d; margin-bottom:16px;">
                         <div style="font-size:0.75rem; font-weight:bold; color:#d8b4fe; margin-bottom:8px;">
-                            🏰 選擇權最大未平倉量 (OI) 防守牆 <span style="font-weight:normal; color:#8b949e; float:right;">FinMind 數據自動衍生</span>
+                            🏰 選擇權最大未平倉量 (OI) 防守牆
                         </div>
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                             <div style="background:#161b22; padding:8px 12px; border-radius:4px; border:1px solid #30363d;">
                                 <div style="font-size:0.7rem; color:#8b949e;">Put 最大支撐牆</div>
-                                <div style="font-size:1.1rem; font-weight:bold; color:#34d399;" id="put-wall">47700</div>
+                                <div style="font-size:1.1rem; font-weight:bold; color:#34d399;" id="put-wall">47,700</div>
                             </div>
                             <div style="background:#161b22; padding:8px 12px; border-radius:4px; border:1px solid #30363d;">
                                 <div style="font-size:0.7rem; color:#8b949e;">Call 最大壓力牆</div>
-                                <div style="font-size:1.1rem; font-weight:bold; color:#f87171;" id="call-wall">48300</div>
+                                <div style="font-size:1.1rem; font-weight:bold; color:#f87171;" id="call-wall">48,300</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 柱狀圖：柱體比較關卡與當前價格 -->
+                    <!-- 柱狀圖比較關卡與當前價格 -->
                     <div style="height: 200px; width: 100%;">
                         <canvas id="pivotBarChart"></canvas>
                     </div>
@@ -245,22 +263,21 @@
                         <h3 style="font-size:0.95rem; margin:0; color:#f0f6fc; display:flex; align-items:center; gap:6px;">
                             🤖 AI 即時籌碼與關卡策略總結
                         </h3>
-                        <!-- 一鍵複製按鈕 -->
                         <button onclick="copyStrategyReport()" class="btn-copy">
                             📋 複製今日教戰手冊
                         </button>
                     </div>
                     
                     <div style="background:#0d1117; padding:12px; border-radius:6px; border:1px solid #21262d; margin-bottom:12px; font-size:0.85rem; line-height:1.6;">
-                        <div style="font-weight:bold; color:#f0f6fc; margin-bottom:4px;">📊 FinMind 最新盤勢與關卡診斷 :</div>
-                        <div>1. <b>多空分水嶺</b>：最新收盤報價為 <b id="diag-price">48024.60</b>，計算樞紐中心 (P) 為 <b style="color:#60a5fa;" id="diag-p">47965.6</b>。</div>
-                        <div>2. <b>壓力與支撐關卡</b>：向上首要壓力區 R1 落在 <b style="color:#f87171;" id="diag-r1">48176.5</b>；向下首要支撐區 S1 落在 <b style="color:#34d399;" id="diag-s1">47813.7</b>。</div>
-                        <div>3. <b>莊家常態區間</b>：選擇權防守牆落在 <b id="diag-put">47700 (Put牆)</b> 至 <b id="diag-call">48300 (Call牆)</b> 之間。</div>
+                        <div style="font-weight:bold; color:#f0f6fc; margin-bottom:4px;">📊 最新盤勢與關卡診斷 :</div>
+                        <div>1. <b>多空分水嶺</b>：最新收盤報價為 <b id="diag-price">48,024.60</b>，計算樞紐中心 (P) 為 <b style="color:#60a5fa;" id="diag-p">47,965.6</b>。</div>
+                        <div>2. <b>壓力與支撐關卡</b>：向上首要壓力區 R1 落在 <b style="color:#f87171;" id="diag-r1">48,176.5</b>；向下首要支撐區 S1 落在 <b style="color:#34d399;" id="diag-s1">47,813.7</b>。</div>
+                        <div>3. <b>莊家常態區間</b>：選擇權防守牆落在 <b id="diag-put">47,700 (Put牆)</b> 至 <b id="diag-call">48,300 (Call牆)</b> 之間。</div>
                     </div>
                     <div style="background:rgba(30,58,138,0.2); padding:12px; border-radius:6px; border:1px solid #1e40af; font-size:0.85rem; line-height:1.6;">
-                        <div style="font-weight:bold; color:#93c5fd; margin-bottom:4px;">💡 FinMind 數據交易策略 :</div>
+                        <div style="font-weight:bold; color:#93c5fd; margin-bottom:4px;">💡 交易策略指引 :</div>
                         <div>• <b>低槓桿多區</b>：若拉回接近第一支撐 S1 獲得支撐，可尋求低接機會進場。</div>
-                        <div>• <b>高檔壓力區</b>：接近 R1 時留意尋求是否出現竭盡訊號，避免高檔盲目追高。</div>
+                        <div>• <b>高檔壓力區</b>：接近 R1 時留意是否出現竭盡訊號，避免高檔盲目追高。</div>
                     </div>
                 </div>
             </div>
@@ -294,58 +311,60 @@
             <div class="glass-panel">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                     <h3 style="margin:0; color:white;">📋 臺指期三大法人期貨交易與未平倉明細</h3>
-                    <span style="font-size:0.75rem; color:#8b949e;">資料來源：<a href="https://www.taifex.com.tw/cht/3/futContractsDate" target="_blank" style="color:#58a6ff;">台灣期貨交易所 (futContractsDate)</a></span>
+                    <span style="font-size:0.75rem; color:#8b949e;">資料來源：台灣期貨交易所 (TAIFEX)</span>
                 </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>身份別</th>
-                            <th style="text-align:right;">多方口數</th>
-                            <th style="text-align:right;">多方金額</th>
-                            <th style="text-align:right;">空方口數</th>
-                            <th style="text-align:right;">空方金額</th>
-                            <th style="text-align:right;">多空淨口數 (今日改變)</th>
-                            <th style="text-align:right;">未平倉多方</th>
-                            <th style="text-align:right;">未平倉空方</th>
-                            <th style="text-align:right;">未平倉淨口數</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td style="font-weight:bold; color:white;">自營商</td>
-                            <td style="text-align:right; color:#58a6ff;">4,020</td>
-                            <td style="text-align:right;">38,698,985</td>
-                            <td style="text-align:right; color:#f2cc60;">2,570</td>
-                            <td style="text-align:right;">24,746,953</td>
-                            <td style="text-align:right; font-weight:bold; color:#34d399;">+1,450</td>
-                            <td style="text-align:right;">3,312</td>
-                            <td style="text-align:right;">4,832</td>
-                            <td style="text-align:right; font-weight:bold; color:#f87171;">-1,520</td>
-                        </tr>
-                        <tr>
-                            <td style="font-weight:bold; color:white;">投信</td>
-                            <td style="text-align:right; color:#58a6ff;">125</td>
-                            <td style="text-align:right;">1,203,395</td>
-                            <td style="text-align:right; color:#f2cc60;">820</td>
-                            <td style="text-align:right;">7,893,777</td>
-                            <td style="text-align:right; font-weight:bold; color:#f87171;">-695</td>
-                            <td style="text-align:right;">75,780</td>
-                            <td style="text-align:right;">2,916</td>
-                            <td style="text-align:right; font-weight:bold; color:#34d399;">+72,864</td>
-                        </tr>
-                        <tr>
-                            <td style="font-weight:bold; color:white;">外資及陸資</td>
-                            <td style="text-align:right; color:#58a6ff;">36,223</td>
-                            <td style="text-align:right;">348,409,564</td>
-                            <td style="text-align:right; color:#f2cc60;">37,132</td>
-                            <td style="text-align:right;">357,153,247</td>
-                            <td style="text-align:right; font-weight:bold; color:#f87171;">-909</td>
-                            <td style="text-align:right;">9,675</td>
-                            <td style="text-align:right;">86,706</td>
-                            <td style="text-align:right; font-weight:bold; color:#f87171;">-77,031</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>身份別</th>
+                                <th style="text-align:right;">多方口數</th>
+                                <th style="text-align:right;">多方金額</th>
+                                <th style="text-align:right;">空方口數</th>
+                                <th style="text-align:right;">空方金額</th>
+                                <th style="text-align:right;">多空淨口數 (今日改變)</th>
+                                <th style="text-align:right;">未平倉多方</th>
+                                <th style="text-align:right;">未平倉空方</th>
+                                <th style="text-align:right;">未平倉淨口數</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="font-weight:bold; color:white;">自營商</td>
+                                <td style="text-align:right; color:#58a6ff;">4,020</td>
+                                <td style="text-align:right;">38,698,985</td>
+                                <td style="text-align:right; color:#f2cc60;">2,570</td>
+                                <td style="text-align:right;">24,746,953</td>
+                                <td style="text-align:right; font-weight:bold; color:#34d399;">+1,450</td>
+                                <td style="text-align:right;">3,312</td>
+                                <td style="text-align:right;">4,832</td>
+                                <td style="text-align:right; font-weight:bold; color:#f87171;">-1,520</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight:bold; color:white;">投信</td>
+                                <td style="text-align:right; color:#58a6ff;">125</td>
+                                <td style="text-align:right;">1,203,395</td>
+                                <td style="text-align:right; color:#f2cc60;">820</td>
+                                <td style="text-align:right;">7,893,777</td>
+                                <td style="text-align:right; font-weight:bold; color:#f87171;">-695</td>
+                                <td style="text-align:right;">75,780</td>
+                                <td style="text-align:right;">2,916</td>
+                                <td style="text-align:right; font-weight:bold; color:#34d399;">+72,864</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight:bold; color:white;">外資及陸資</td>
+                                <td style="text-align:right; color:#58a6ff;">36,223</td>
+                                <td style="text-align:right;">348,409,564</td>
+                                <td style="text-align:right; color:#f2cc60;">37,132</td>
+                                <td style="text-align:right;">357,153,247</td>
+                                <td style="text-align:right; font-weight:bold; color:#f87171;">-909</td>
+                                <td style="text-align:right;">9,675</td>
+                                <td style="text-align:right;">86,706</td>
+                                <td style="text-align:right; font-weight:bold; color:#f87171;">-77,031</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <div class="glass-panel">
@@ -388,7 +407,7 @@
             <div class="glass-panel">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                     <h3 style="margin:0; color:white;">📈 近 20～60 日量價累積圖 (VPVR + 當沖水嶺 VWAP)</h3>
-                    <span style="font-size:0.75rem; color:#8b949e;">黃色標示 POC，藍色虛線為 VWAP 水嶺</span>
+                    <span style="font-size:0.75rem; color:#8b949e;">黃色標示 POC，藍色條表常態成交區</span>
                 </div>
                 <div style="height: 360px; width: 100%;">
                     <canvas id="vpvrChart"></canvas>
@@ -396,7 +415,7 @@
             </div>
         </div>
 
-        <!-- ==================== 第四頁：國際總經 ==================== -->
+        <!-- ==================== 第四頁：國際總經 (TradingView) ==================== -->
         <div id="page-macro" style="display:none; flex-direction:column; gap:20px;">
             <div class="glass-panel">
                 <h3 style="margin:0 0 12px 0; color:#58a6ff; display:flex; align-items:center; gap:8px;">
@@ -529,33 +548,32 @@
 
         <!-- ==================== 第五頁：開盤策略與當沖教戰 ==================== -->
         <div id="page-strategy" style="display:none; flex-direction:column; gap:16px;">
-            
             <div class="glass-panel">
                 <h3 style="margin:0 0 6px 0; color:#58a6ff; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
                     ⏱️ 開盤前 15 分鐘（08:30 - 08:45）當沖實戰檢核 SOP
                 </h3>
-                <p style="font-size:0.8rem; color:#8b949e; margin:0 0 12px 0;">日盤試試撮合階段，透過夜盤缺口、預估量與 Pivot 關卡建構精準卡位劇本：</p>
+                <p style="font-size:0.8rem; color:#8b949e; margin:0 0 12px 0;">日盤試撮階段，透過夜盤缺口、預估量與 Pivot 關卡建構精準卡位劇本：</p>
                 
                 <div class="sop-grid">
                     <div class="sop-card">
                         <div class="sop-step">Step 1: 查看 Gap 數值</div>
                         <div style="font-weight:bold; color:white; font-size:0.95rem; margin-top:2px;">確認今日跳空方向與點數</div>
                         <div style="font-size:0.8rem; color:#8b949e; margin-top:6px; line-height:1.4;">
-                            查看首頁之「夜盤跳空缺口」，判定今日屬於大缺口 ($>\pm80\sim100$ 點) 或常態小缺口 ($\pm20\sim50$ 點)。
+                            查看首頁之「夜盤跳空缺口」，判定今日屬於大缺口 (±80 ~ 100 點以上) 或常態小缺口 (±20 ~ 50 點)。
                         </div>
                     </div>
                     <div class="sop-card">
                         <div class="sop-step">Step 2: 對照 Pivot 關卡</div>
                         <div style="font-weight:bold; color:white; font-size:0.95rem; margin-top:2px;">推算預估開盤落點位階</div>
                         <div style="font-size:0.8rem; color:#8b949e; margin-top:6px; line-height:1.4;">
-                            估算價 $= \text{昨日收盤} + \text{Gap}$。對照此位置是開在 <b>樞紐 P</b> 附近，還是越過了 <b>R1/S1</b> 或逼近 <b>Call/Put 牆</b>。
+                            估算價 = 昨日收盤 + Gap。對照此位置是開在 <b>樞紐 P</b> 附近，還是越過了 <b>R1/S1</b> 或逼近 <b>Call/Put 牆</b>。
                         </div>
                     </div>
                     <div class="sop-card">
                         <div class="sop-step">Step 3: 驗證預估成交量</div>
                         <div style="font-weight:bold; color:white; font-size:0.95rem; margin-top:2px;">區分真突破與假突破</div>
                         <div style="font-size:0.8rem; color:#8b949e; margin-top:6px; line-height:1.4;">
-                            若大跳空但預估量 $< 3000$ 億 ➔ <b>無量假突破</b>（嚴防回補缺口）；預估量 $> 4000$ 億 ➔ <b>有量真趨勢</b>。
+                            若大跳空但預估量小於 3000 億 ➔ <b>無量假突破</b>（嚴防回補缺口）；預估量大於 4000 億 ➔ <b>有量真趨勢</b>。
                         </div>
                     </div>
                 </div>
@@ -610,7 +628,6 @@
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 
@@ -634,72 +651,97 @@
             }
         }
 
-        // 1. 自動抓取 FinMind 最新數據腳本 (具有完善離線降級保護機制)
+        // 多重 CORS 代理備用機制拉取 API 數據
         async function fetchFinMindData() {
-            const statusEl = document.getElementById('api-status');
-            try {
-                // 免費 FinMind API 自動撈取加權指數 (TAIEX)
-                const url = "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=TAIEX";
-                const response = await fetch(url);
-                const result = await response.json();
-                
-                if (result.data && result.data.length > 0) {
-                    const latest = result.data[result.data.length - 1];
-                    const prev = result.data[result.data.length - 2] || latest;
-                    
-                    const h = parseFloat(latest.max);
-                    const l = parseFloat(latest.min);
-                    const c = parseFloat(latest.close);
-                    const prevC = parseFloat(prev.close);
-                    const change = c - prevC;
-                    const changePct = (change / prevC) * 100;
+            const statusBadge = document.getElementById('api-status-badge');
+            const targetUrl = "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=TAIEX";
+            
+            // 多個代理 Endpoint 備援清單
+            const proxyEndpoints = [
+                `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
+                targetUrl // 最後直接呼叫原生 API
+            ];
 
-                    // 自動更新網頁主要點位與 UI
-                    document.getElementById('main-price').innerText = c.toLocaleString('en-US', {minimumFractionDigits: 2});
-                    document.getElementById('main-high').innerText = h.toLocaleString('en-US', {minimumFractionDigits: 2});
-                    document.getElementById('main-low').innerText = l.toLocaleString('en-US', {minimumFractionDigits: 2});
-                    document.getElementById('main-prev').innerText = prevC.toLocaleString('en-US', {minimumFractionDigits: 2});
-                    
-                    const changeEl = document.getElementById('main-change');
-                    changeEl.innerText = `${change >= 0 ? '+' : ''}${change.toFixed(2)} (${changePct.toFixed(2)}%)`;
-                    changeEl.style.color = change >= 0 ? '#34d399' : '#f87171';
+            let success = false;
+            let resultData = null;
 
-                    // 自動重新計算 Pivot 五關卡點位
-                    const p = (h + l + c) / 3;
-                    const r1 = (2 * p) - l;
-                    const s1 = (2 * p) - h;
-                    const r2 = p + (h - l);
-                    const s2 = p - (h - l);
-
-                    document.getElementById('val-p').textContent = p.toFixed(1);
-                    document.getElementById('val-r1').textContent = r1.toFixed(1);
-                    document.getElementById('val-s1').textContent = s1.toFixed(1);
-                    document.getElementById('val-r2').textContent = r2.toFixed(1);
-                    document.getElementById('val-s2').textContent = s2.toFixed(1);
-
-                    // 自動更新 AI 診斷點位
-                    document.getElementById('diag-price').textContent = c.toFixed(2);
-                    document.getElementById('diag-p').textContent = p.toFixed(1);
-                    document.getElementById('diag-r1').textContent = r1.toFixed(1);
-                    document.getElementById('diag-s1').textContent = s1.toFixed(1);
-
-                    // 更新柱狀圖數據
-                    if (pivotBarChart) {
-                        pivotBarChart.data.datasets[0].data = [47700, s1, p, c, r1, 48300];
-                        pivotBarChart.update();
+            for (let url of proxyEndpoints) {
+                try {
+                    console.log(`嘗試連線通道: ${url}`);
+                    const response = await fetch(url, { method: 'GET' });
+                    if (response.ok) {
+                        const resJson = await response.json();
+                        if (resJson && resJson.data && resJson.data.length > 0) {
+                            resultData = resJson.data;
+                            success = true;
+                            console.log("✅ 成功存取 FinMind API 數據！");
+                            break;
+                        }
                     }
-
-                    statusEl.innerHTML = `<span style="color:#34d399;">✓ FinMind API 連線正常 (${latest.date})</span>`;
-                } else {
-                    throw new Error("無有效數據");
+                } catch (e) {
+                    console.warn(`通道連線失敗 (${url})，切換下一個...`, e);
                 }
-            } catch (err) {
-                console.warn('FinMind 自動抓取提示：使用預設靜態數據展示', err);
-                statusEl.innerHTML = `<span style="color:#e3b341;">⚠️ API 離線 (展示預設值)</span>`;
+            }
+
+            if (success && resultData) {
+                const latest = resultData[resultData.length - 1];
+                const prev = resultData[resultData.length - 2] || latest;
+                
+                const h = parseFloat(latest.max);
+                const l = parseFloat(latest.min);
+                const c = parseFloat(latest.close);
+                const prevC = parseFloat(prev.close);
+                const change = c - prevC;
+                const changePct = (change / prevC) * 100;
+
+                // 更新主界面價格資訊
+                document.getElementById('main-price').innerText = c.toLocaleString('en-US', {minimumFractionDigits: 2});
+                document.getElementById('main-high').innerText = h.toLocaleString('en-US', {minimumFractionDigits: 2});
+                document.getElementById('main-low').innerText = l.toLocaleString('en-US', {minimumFractionDigits: 2});
+                document.getElementById('main-prev').innerText = prevC.toLocaleString('en-US', {minimumFractionDigits: 2});
+                document.getElementById('data-date').innerText = `資料日期: ${latest.date}`;
+
+                const changeEl = document.getElementById('main-change');
+                changeEl.innerText = `${change >= 0 ? '+' : ''}${change.toFixed(2)} (${changePct.toFixed(2)}%)`;
+                changeEl.style.color = change >= 0 ? '#34d399' : '#f87171';
+
+                // 自動重新計算 Pivot 關卡點位
+                const p = (h + l + c) / 3;
+                const r1 = (2 * p) - l;
+                const s1 = (2 * p) - h;
+                const r2 = p + (h - l);
+                const s2 = p - (h - l);
+
+                document.getElementById('val-p').textContent = p.toFixed(1);
+                document.getElementById('val-r1').textContent = r1.toFixed(1);
+                document.getElementById('val-s1').textContent = s1.toFixed(1);
+                document.getElementById('val-r2').textContent = r2.toFixed(1);
+                document.getElementById('val-s2').textContent = s2.toFixed(1);
+
+                // 更新診斷訊息
+                document.getElementById('diag-price').textContent = c.toFixed(2);
+                document.getElementById('diag-p').textContent = p.toFixed(1);
+                document.getElementById('diag-r1').textContent = r1.toFixed(1);
+                document.getElementById('diag-s1').textContent = s1.toFixed(1);
+
+                // 更新柱狀圖數據
+                if (pivotBarChart) {
+                    pivotBarChart.data.datasets[0].data = [47700, s1, p, c, r1, 48300];
+                    pivotBarChart.update();
+                }
+
+                // 顯示成功標籤
+                statusBadge.className = "status-badge status-online";
+                statusBadge.innerHTML = "✓ API 連線成功 (最新資料)";
+            } else {
+                console.warn("所有 API 通道均無法連線，使用靜態預設數據與計算機制");
+                statusBadge.className = "status-badge status-loading";
+                statusBadge.innerHTML = "⚠️ 離線預設模式";
             }
         }
 
-        // 2. 一鍵複製今日教戰手冊純文字檔
+        // 一鍵複製今日教戰手冊純文字檔
         function copyStrategyReport() {
             const dateStr = new Date().toLocaleDateString('zh-TW');
             const price = document.getElementById('main-price').innerText;
@@ -721,7 +763,7 @@
 
             const text = `📊 【台指期當沖與大盤教戰手冊】(${dateStr})
 ---------------------------------------
-📌 加權指數收盤：${price}
+📌 加權指數最新參考：${price}
 ⚡ 當沖主力成本 VWAP：${vwap}
 
 🔥 即時動態當沖指標：
@@ -747,11 +789,11 @@
  • 第二壓力 (R2)：${tsmcR2}
 
 💡 實戰策略指引：
- 1. 價格位於 VWAP (${vwap}) 與 Pivot (${p}) 之上，偏多控盤。
- 2. 開盤若追價爆量突破 R1 (${r1})，關注量能是否持續達預估量(${estVol})；若無量突破謹防假突破。
+ 1. 價格位於 VWAP (${vwap}) 與 Pivot (${p}) 之上，當沖偏多控盤。
+ 2. 開盤若追價爆量突破 R1 (${r1})，關注量能是否持續達預估量(${estVol})；無量謹防假突破。
  3. 拉回接近 S1 (${s1}) 止跌可布局低接。
 ---------------------------------------
-(本報告源自 TAIEX 智慧分析系統自動生成)`;
+(本報告源自 TAIEX 智慧當沖分析儀表板)`;
 
             navigator.clipboard.writeText(text).then(() => {
                 alert('✅ 已成功複製「今日教戰手冊」！可以直接貼到 LINE、Telegram 或筆記軟體。');
@@ -880,7 +922,7 @@
 
         window.onload = function() {
             initPivotBarChart();
-            fetchFinMindData(); // 開啟時自動向 API 撈取最新數據
+            fetchFinMindData();
         };
     </script>
 </body>
