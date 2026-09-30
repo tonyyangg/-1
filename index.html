@@ -3,927 +3,619 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>台灣加權指數 (TAIEX) 當沖分析系統 & Pivot 關卡儀表板</title>
-    <!-- Chart.js 圖表庫 -->
+    <title>台指期當沖決策戰情室 (TAIEX Day Trading Dashboard)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- TradingView Widget Script -->
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <style>
-        * { box-sizing: border-box; }
-        body { background-color: #0d1117; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 0; padding: 20px; }
-        .max-w-7xl { max-width: 1400px; margin: 0 auto; }
-        
-        /* 頁籤導航 */
-        .nav-tabs { display: flex; gap: 12px; border-bottom: 1px solid #30363d; margin-bottom: 20px; padding-bottom: 8px; overflow-x: auto; }
-        .tab-btn { background: #161b22; border: 1px solid #30363d; color: #8b949e; cursor: pointer; padding: 10px 16px; font-size: 0.9rem; font-weight: 600; border-radius: 6px; whitespace: nowrap; transition: all 0.2s ease; }
-        .tab-btn:hover { color: #f0f6fc; border-color: #8b949e; }
-        .tab-btn.active { background: #1f6beb; border-color: #388bfd; color: #ffffff; box-shadow: 0 0 10px rgba(31, 107, 235, 0.4); }
-
-        /* 卡片玻璃質感容器 */
-        .glass-panel { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 18px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-        
-        /* 第一頁版面：左 1 右 2 */
-        .grid-dashboard { display: grid; grid-template-columns: 340px 1fr; gap: 16px; }
-        @media (max-width: 1024px) { .grid-dashboard { grid-template-columns: 1fr; } }
-
-        /* 警告 Banner */
-        .alert-banner { background: rgba(210, 153, 34, 0.1); border: 1px solid #d29922; border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; color: #e3b341; font-size: 0.85rem; display: flex; align-items: center; gap: 10px; }
-        
-        /* Pivot 5 關卡卡片 */
-        .pivot-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 16px; margin-bottom: 16px; }
-        @media (max-width: 640px) { .pivot-grid { grid-template-columns: repeat(2, 1fr); } }
-        .pivot-card { padding: 10px; border-radius: 6px; text-align: center; border: 1px solid transparent; }
-        .pivot-card .label { font-size: 0.7rem; font-weight: bold; margin-bottom: 4px; }
-        .pivot-card .val { font-size: 1.1rem; font-weight: 800; }
-        
-        /* 關卡配色 */
-        .card-s2 { background: #032b1d; border-color: #065f46; color: #34d399; }
-        .card-s1 { background: #064e3b; border-color: #047857; color: #10b981; }
-        .card-p  { background: #1e3a8a; border-color: #1d4ed8; color: #60a5fa; }
-        .card-r1 { background: #7f1d1d; border-color: #b91c1c; color: #f87171; }
-        .card-r2 { background: #4c0519; border-color: #9f1239; color: #fda4af; }
-
-        /* 輸入框與按鈕 */
-        input[type="number"] { background: #0d1117; border: 1px solid #30363d; color: white; padding: 6px; border-radius: 4px; width: 100%; font-size: 0.8rem; }
-        .btn-blue { width: 100%; padding: 8px; background: #1f6beb; color: white; border-radius: 6px; border: none; font-weight: 600; font-size: 0.8rem; cursor: pointer; margin-top: 8px; transition: background 0.2s; }
-        .btn-blue:hover { background: #388bfd; }
-        .btn-copy { background: #238636; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: background 0.2s; }
-        .btn-copy:hover { background: #2ea043; }
-        
-        /* 表格樣式 */
-        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        th, td { padding: 10px; border-bottom: 1px solid #21262d; text-align: left; }
-        th { background: #0d1117; color: #8b949e; }
-
-        /* 第五頁專用圖卡與流程樣式 */
-        .sop-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
-        @media (max-width: 768px) { .sop-grid { grid-template-columns: 1fr; } }
-        .sop-card { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 14px; position: relative; }
-        .sop-step { font-size: 0.75rem; font-weight: bold; color: #58a6ff; margin-bottom: 4px; text-transform: uppercase; }
-        .strategy-card { background: #0d1117; border-left: 4px solid #388bfd; border-radius: 6px; padding: 14px; margin-bottom: 12px; }
-        
-        /* API 狀態標籤 */
-        .status-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: bold; }
-        .status-online { background: rgba(52, 211, 153, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
-        .status-loading { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .active-tab {
+            border-bottom: 3px solid #3b82f6;
+            color: #3b82f6;
+            font-weight: bold;
+        }
+        .bg-dark-card {
+            background-color: #1e293b;
+        }
+        .bg-dark-bg {
+            background-color: #0f172a;
+        }
     </style>
 </head>
-<body>
+<body class="bg-dark-bg text-slate-100 min-h-screen flex flex-col font-sans">
 
-    <div class="max-w-7xl">
-        <!-- 頁籤導航 -->
-        <nav class="nav-tabs">
-            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn active">📊 大盤總覽與 AI 交易建議</button>
-            <button onclick="switchTab('chips')" id="tab-chips" class="tab-btn">📋 期貨籌碼與融資</button>
-            <button onclick="switchTab('vpvr')" id="tab-vpvr" class="tab-btn">📈 量價累積圖 (VPVR)</button>
-            <button onclick="switchTab('macro')" id="tab-macro" class="tab-btn">🌐 國際總經 (TradingView)</button>
-            <button onclick="switchTab('strategy')" id="tab-strategy" class="tab-btn">🎯 開盤策略與當沖教戰</button>
-        </nav>
-
-        <!-- ==================== 第一頁：大盤總覽 ==================== -->
-        <div id="page-dashboard" class="grid-dashboard">
-            <!-- 左側區域 -->
-            <div>
-                <!-- 即時動態指標與市場情緒 -->
-                <div class="glass-panel">
-                    <h3 style="font-size:0.9rem; margin:0 0 12px 0; color:#f0f6fc; display:flex; align-items:center; gap:6px;">
-                        🟠 當沖即時動態指標 (Real-time)
-                    </h3>
-                    
-                    <!-- 期現貨價差 (Basis) -->
-                    <div style="background:#0d1117; padding:10px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <div style="font-size:0.7rem; color:#8b949e;">期現貨價差 (Basis)</div>
-                            <div style="font-size:1.1rem; font-weight:bold; color:#34d399; margin-top:2px;" id="basis-val">+18.5 點</div>
-                        </div>
-                        <span style="background:#064e3b; color:#34d399; font-size:0.75rem; padding:2px 6px; border-radius:4px;" id="basis-tag">正價差 (偏多)</span>
-                    </div>
-
-                    <!-- 大盤預估成交量 -->
-                    <div style="background:#0d1117; padding:10px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <div style="font-size:0.7rem; color:#8b949e;">大盤預估成交量</div>
-                            <div style="font-size:1.1rem; font-weight:bold; color:#f59e0b; margin-top:2px;" id="est-vol">4,250 億</div>
-                        </div>
-                        <span style="background:#78350f; color:#fcd34d; font-size:0.75rem; padding:2px 6px; border-radius:4px;" id="vol-tag">出量突破預警</span>
-                    </div>
-
-                    <!-- 夜盤跳空缺口 -->
-                    <div style="background:#0d1117; padding:10px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <div style="font-size:0.7rem; color:#8b949e;">夜盤跳空缺口 (Night Gap)</div>
-                            <div style="font-size:1.1rem; font-weight:bold; color:#60a5fa; margin-top:2px;" id="gap-val">+42.0 點</div>
-                        </div>
-                        <span style="background:#1e3a8a; color:#93c5fd; font-size:0.75rem; padding:2px 6px; border-radius:4px;">跳空高開</span>
-                    </div>
-
-                    <!-- 電子類股成交比重 -->
-                    <div style="background:#0d1117; padding:10px; border-radius:6px; margin-bottom:8px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div style="font-size:0.7rem; color:#8b949e;">電子類股成交比重</div>
-                            <span style="background:#1e3a8a; color:#93c5fd; font-size:0.75rem; padding:1px 6px; border-radius:3px;" id="elec-tag">電子主導 (>60%)</span>
-                        </div>
-                        <div style="font-size:1.1rem; font-weight:bold; color:#388bfd; margin-top:2px;" id="elec-ratio">68.5 %</div>
-                        <div style="width:100%; background:#21262d; height:6px; border-radius:3px; margin-top:6px; overflow:hidden;">
-                            <div style="width:68.5%; background:#388bfd; height:100%; border-radius:3px;" id="elec-bar"></div>
-                        </div>
-                    </div>
-
-                    <!-- 狀態指示器 -->
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; font-size:0.7rem;">
-                        <span style="color:#8b949e;">FinMind 數據源：</span>
-                        <div id="api-status-badge" class="status-badge status-loading">
-                            ⚡ 連線嘗試中...
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 台積電 (2330) 權量關卡 -->
-                <div class="glass-panel">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <h3 style="font-size:0.9rem; margin:0; color:#f0f6fc;">🪙 台積電 (2330) 權量關卡</h3>
-                        <span style="font-size:0.7rem; color:#8b949e;">參考收盤: $2,470.0</span>
-                    </div>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-                        <div class="pivot-card card-s2">
-                            <div class="label">第二支撐 (S2)</div>
-                            <div class="val" id="tsmc-s2">$2,440.0</div>
-                        </div>
-                        <div class="pivot-card card-s1">
-                            <div class="label">第一支撐 (S1)</div>
-                            <div class="val" id="tsmc-s1">$2,455.7</div>
-                        </div>
-                        <div class="pivot-card card-r1">
-                            <div class="label">第一壓力 (R1)</div>
-                            <div class="val" id="tsmc-r1">$2,485.7</div>
-                        </div>
-                        <div class="pivot-card card-r2">
-                            <div class="label">第二壓力 (R2)</div>
-                            <div class="val" id="tsmc-r2">$2,500.0</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 手動 / 夜盤 Pivot 計算器 -->
-                <div class="glass-panel">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                        <h3 style="font-size:0.9rem; margin:0; color:#f0f6fc;">⚡ 手動 / 夜盤 Pivot 計算器</h3>
-                        <input type="checkbox" id="manual-toggle" onchange="toggleManual()">
-                    </div>
-                    <p style="font-size:0.75rem; color:#8b949e; margin:0 0 10px 0;">自訂夜盤高低收 (H/L/C) 試算最新關卡：</p>
-                    <div id="manual-form" style="opacity:0.4; pointer-events:none; transition:opacity 0.2s;">
-                        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;">
-                            <div><div style="font-size:0.65rem; color:#8b949e;">夜高 (High)</div><input type="number" id="m-h" placeholder="最高"></div>
-                            <div><div style="font-size:0.65rem; color:#8b949e;">夜低 (Low)</div><input type="number" id="m-l" placeholder="最低"></div>
-                            <div><div style="font-size:0.65rem; color:#8b949e;">夜收 (Close)</div><input type="number" id="m-c" placeholder="收盤"></div>
-                        </div>
-                        <button onclick="calcManual()" class="btn-blue">套用手動參數重新計算</button>
-                    </div>
-                </div>
+    <!-- Header Navigation -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+            <div class="flex items-center space-x-3">
+                <div class="w-3 h-8 bg-blue-500 rounded"></div>
+                <h1 class="text-xl font-bold tracking-wide">台指期當沖決策戰情室</h1>
             </div>
+            <nav class="flex space-x-1 sm:space-x-4 text-sm font-medium">
+                <button onclick="switchTab('tab1')" id="nav-tab1" class="px-3 py-2 rounded-md active-tab flex items-center gap-1">
+                    📊 大盤總覽與 AI 交易建議
+                </button>
+                <button onclick="switchTab('tab2')" id="nav-tab2" class="px-3 py-2 rounded-md text-slate-400 hover:text-slate-200 flex items-center gap-1">
+                    📜 期貨籌碼與融資
+                </button>
+                <button onclick="switchTab('tab3')" id="nav-tab3" class="px-3 py-2 rounded-md text-slate-400 hover:text-slate-200 flex items-center gap-1">
+                    📈 量價累積圖 (VPVR)
+                </button>
+                <button onclick="switchTab('tab4')" id="nav-tab4" class="px-3 py-2 rounded-md text-slate-400 hover:text-slate-200 flex items-center gap-1">
+                    🌐 國際總經 (TradingView)
+                </button>
+                <button onclick="switchTab('tab5')" id="nav-tab5" class="px-3 py-2 rounded-md text-slate-400 hover:text-slate-200 flex items-center gap-1">
+                    🎯 開盤策略與當沖教戰
+                </button>
+            </nav>
+        </div>
+    </header>
 
-            <!-- 右側主區域 -->
-            <div>
-                <!-- 警告 Banner -->
-                <div class="alert-banner">
-                    ⚠️ <b>大盤接近 Pivot 樞紐中心！</b> 宜密切關注多空分水嶺攻防防守，觀察量能決定卡位劇本。
-                </div>
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 gap-6">
 
-                <!-- 主指數與 Pivot 五關卡 -->
-                <div class="glass-panel">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                        <div>
-                            <div style="font-size:0.8rem; color:#8b949e;">
-                                TAIEX 加權指數 
-                                <span id="data-source-tag" style="background:#064e3b; color:#34d399; font-size:0.65rem; padding:1px 6px; border-radius:3px; margin-left:6px;">
-                                    FinMind CORS Proxy 連線
-                                </span>
-                            </div>
-                            <div style="display:flex; align-items:baseline; gap:12px; margin-top:4px;">
-                                <span style="font-size:2.2rem; font-weight:900; color:white;" id="main-price">48,024.60</span>
-                                <span style="font-size:1.1rem; font-weight:bold; color:#f87171;" id="main-change">-132.69 (-0.28%)</span>
-                            </div>
-                        </div>
-                        <div style="text-align:right; font-size:0.75rem; color:#8b949e;">
-                            <div>最高: <span style="color:#f87171;" id="main-high">48,117.54</span></div>
-                            <div>最低: <span style="color:#34d399;" id="main-low">47,754.72</span></div>
-                            <div>昨收: <span id="main-prev">48,157.29</span></div>
-                            <div style="font-size:0.65rem; color:#58a6ff; margin-top:2px;" id="data-date">更新日期: 加載中...</div>
-                        </div>
-                    </div>
-
-                    <!-- 五關卡點位 -->
-                    <div class="pivot-grid">
-                        <div class="pivot-card card-s2">
-                            <div class="label">第二支撐 (S2)</div>
-                            <div class="val" id="val-s2">47,602.9</div>
-                        </div>
-                        <div class="pivot-card card-s1">
-                            <div class="label">第一支撐 (S1)</div>
-                            <div class="val" id="val-s1">47,813.7</div>
-                        </div>
-                        <div class="pivot-card card-p">
-                            <div class="label">樞紐中心 (P)</div>
-                            <div class="val" id="val-p">47,965.6</div>
-                        </div>
-                        <div class="pivot-card card-r1">
-                            <div class="label">第一壓力 (R1)</div>
-                            <div class="val" id="val-r1">48,176.5</div>
-                        </div>
-                        <div class="pivot-card card-r2">
-                            <div class="label">第二壓力 (R2)</div>
-                            <div class="val" id="val-r2">48,328.4</div>
-                        </div>
-                    </div>
-
-                    <!-- 選擇權莊家防守牆 -->
-                    <div style="background:#0d1117; padding:12px; border-radius:6px; border:1px solid #21262d; margin-bottom:16px;">
-                        <div style="font-size:0.75rem; font-weight:bold; color:#d8b4fe; margin-bottom:8px;">
-                            🏰 選擇權最大未平倉量 (OI) 防守牆
-                        </div>
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-                            <div style="background:#161b22; padding:8px 12px; border-radius:4px; border:1px solid #30363d;">
-                                <div style="font-size:0.7rem; color:#8b949e;">Put 最大支撐牆</div>
-                                <div style="font-size:1.1rem; font-weight:bold; color:#34d399;" id="put-wall">47,700</div>
-                            </div>
-                            <div style="background:#161b22; padding:8px 12px; border-radius:4px; border:1px solid #30363d;">
-                                <div style="font-size:0.7rem; color:#8b949e;">Call 最大壓力牆</div>
-                                <div style="font-size:1.1rem; font-weight:bold; color:#f87171;" id="call-wall">48,300</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 柱狀圖比較關卡與當前價格 -->
-                    <div style="height: 200px; width: 100%;">
-                        <canvas id="pivotBarChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- AI 即時籌碼與關卡策略總結 -->
-                <div class="glass-panel" style="border-left: 4px solid #388bfd;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                        <h3 style="font-size:0.95rem; margin:0; color:#f0f6fc; display:flex; align-items:center; gap:6px;">
-                            🤖 AI 即時籌碼與關卡策略總結
+        <!-- TAB 1: 大盤總覽與 AI 交易建議 -->
+        <div id="tab1" class="tab-content space-y-6">
+            
+            <!-- Realtime Metrics & Top Banner -->
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <!-- Left Column: Quick Indicators -->
+                <div class="space-y-4">
+                    <div class="bg-dark-card p-4 rounded-xl border border-slate-700/60 shadow-lg">
+                        <h3 class="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            當沖即時動態指標 (Real-time)
                         </h3>
-                        <button onclick="copyStrategyReport()" class="btn-copy">
-                            📋 複製今日教戰手冊
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center p-2 rounded bg-slate-800/50">
+                                <div>
+                                    <div class="text-xs text-slate-400">期現貨價差 (Basis)</div>
+                                    <div id="basis-val" class="text-lg font-bold text-emerald-400">+18.5 點</div>
+                                </div>
+                                <span id="basis-badge" class="px-2 py-1 text-xs rounded font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">正價差 (偏多)</span>
+                            </div>
+                            <div class="flex justify-between items-center p-2 rounded bg-slate-800/50">
+                                <div>
+                                    <div class="text-xs text-slate-400">大盤預估成交量</div>
+                                    <div id="est-volume" class="text-lg font-bold text-amber-400">4,250 億</div>
+                                </div>
+                                <span class="px-2 py-1 text-xs rounded font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30">出量突破預警</span>
+                            </div>
+                            <div class="flex justify-between items-center p-2 rounded bg-slate-800/50">
+                                <div>
+                                    <div class="text-xs text-slate-400">夜盤跳空缺口 (Night Gap)</div>
+                                    <div id="night-gap" class="text-lg font-bold text-blue-400">+42.0 點</div>
+                                </div>
+                                <span class="px-2 py-1 text-xs rounded font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30">跳空高開</span>
+                            </div>
+                            <div class="p-2 rounded bg-slate-800/50 space-y-1">
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-slate-400">電子類股成交比重</span>
+                                    <span id="elec-ratio-text" class="text-slate-200 font-bold">68.5 %</span>
+                                </div>
+                                <div class="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
+                                    <div id="elec-bar" class="bg-blue-500 h-full rounded-full" style="width: 68.5%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-2 border-t border-slate-700/50 flex justify-between items-center text-xs text-slate-400">
+                            <span>FinMind 數據源：</span>
+                            <span id="api-status-badge" class="text-emerald-400 font-medium">✓ API 連線成功 (最新數據)</span>
+                        </div>
+                    </div>
+
+                    <!-- Manual Pivot Calculator -->
+                    <div class="bg-dark-card p-4 rounded-xl border border-slate-700/60 shadow-lg">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-slate-300 font-bold text-sm flex items-center gap-2">
+                                ⚡ 手動 / 夜盤 Pivot 計算器
+                            </h3>
+                            <input type="checkbox" id="enable-custom-pivot" onchange="toggleCustomPivot()" class="rounded bg-slate-800 border-slate-600 text-blue-500 focus:ring-blue-500">
+                        </div>
+                        <p class="text-xs text-slate-400 mb-3">自訂夜盤高低收 (H/L/C) 試算最新關卡：</p>
+                        <div class="grid grid-cols-3 gap-2 text-xs">
+                            <div>
+                                <label class="text-slate-400 block mb-1">夜高 (High)</label>
+                                <input type="number" id="custom-high" class="w-full bg-slate-800 border border-slate-700 rounded p-1.5 text-slate-100" placeholder="最高">
+                            </div>
+                            <div>
+                                <label class="text-slate-400 block mb-1">夜低 (Low)</label>
+                                <input type="number" id="custom-low" class="w-full bg-slate-800 border border-slate-700 rounded p-1.5 text-slate-100" placeholder="最低">
+                            </div>
+                            <div>
+                                <label class="text-slate-400 block mb-1">夜收 (Close)</label>
+                                <input type="number" id="custom-close" class="w-full bg-slate-800 border border-slate-700 rounded p-1.5 text-slate-100" placeholder="收盤">
+                            </div>
+                        </div>
+                        <button onclick="calculateCustomPivot()" class="mt-3 w-full bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs py-2 rounded transition">
+                            重新計算關卡點位
                         </button>
                     </div>
-                    
-                    <div style="background:#0d1117; padding:12px; border-radius:6px; border:1px solid #21262d; margin-bottom:12px; font-size:0.85rem; line-height:1.6;">
-                        <div style="font-weight:bold; color:#f0f6fc; margin-bottom:4px;">📊 最新盤勢與關卡診斷 :</div>
-                        <div>1. <b>多空分水嶺</b>：最新收盤報價為 <b id="diag-price">48,024.60</b>，計算樞紐中心 (P) 為 <b style="color:#60a5fa;" id="diag-p">47,965.6</b>。</div>
-                        <div>2. <b>壓力與支撐關卡</b>：向上首要壓力區 R1 落在 <b style="color:#f87171;" id="diag-r1">48,176.5</b>；向下首要支撐區 S1 落在 <b style="color:#34d399;" id="diag-s1">47,813.7</b>。</div>
-                        <div>3. <b>莊家常態區間</b>：選擇權防守牆落在 <b id="diag-put">47,700 (Put牆)</b> 至 <b id="diag-call">48,300 (Call牆)</b> 之間。</div>
+                </div>
+
+                <!-- Right 3 Columns: Main Chart & Pivot Wall -->
+                <div class="lg:col-span-3 space-y-4">
+                    <!-- Dynamic Alert Banner -->
+                    <div id="ai-alert-banner" class="bg-amber-500/10 border border-amber-500/30 text-amber-300 px-4 py-3 rounded-xl flex items-center gap-3 text-sm">
+                        <span class="text-xl">⚠️</span>
+                        <div>
+                            <span class="font-bold">大盤接近 Pivot 樞紐中心！</span> 宜密切關注多空分水嶺攻防守勢，觀察量能決定卡位劇本。
+                        </div>
                     </div>
-                    <div style="background:rgba(30,58,138,0.2); padding:12px; border-radius:6px; border:1px solid #1e40af; font-size:0.85rem; line-height:1.6;">
-                        <div style="font-weight:bold; color:#93c5fd; margin-bottom:4px;">💡 交易策略指引 :</div>
-                        <div>• <b>低槓桿多區</b>：若拉回接近第一支撐 S1 獲得支撐，可尋求低接機會進場。</div>
-                        <div>• <b>高檔壓力區</b>：接近 R1 時留意是否出現竭盡訊號，避免高檔盲目追高。</div>
+
+                    <!-- Index & Pivot Cards -->
+                    <div class="bg-dark-card p-5 rounded-xl border border-slate-700/60 shadow-lg space-y-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="text-xs font-semibold text-slate-400 flex items-center gap-2">
+                                    <span>TAIEX 加權指數</span>
+                                    <span class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-emerald-400 border border-slate-700">自動即時更新</span>
+                                </div>
+                                <div class="flex items-baseline gap-3 mt-1">
+                                    <span id="taiex-price" class="text-3xl font-extrabold tracking-tight text-white">--.--</span>
+                                    <span id="taiex-change" class="text-base font-semibold text-emerald-400">--.-- (--%)</span>
+                                </div>
+                            </div>
+                            <div class="text-right text-xs text-slate-400 space-y-1">
+                                <div>最高: <span id="taiex-high" class="text-red-400 font-medium">--</span></div>
+                                <div>最低: <span id="taiex-low" class="text-emerald-400 font-medium">--</span></div>
+                                <div>昨收: <span id="taiex-prev" class="text-slate-200 font-medium">--</span></div>
+                                <div id="update-timestamp" class="text-[10px] text-slate-500 mt-1">更新時間: 載入中...</div>
+                            </div>
+                        </div>
+
+                        <!-- 5 Pivot Cards Grid -->
+                        <div class="grid grid-cols-5 gap-2 pt-2">
+                            <div class="bg-emerald-950/40 border border-emerald-800/50 p-2.5 rounded-lg text-center">
+                                <div class="text-[11px] text-emerald-400 font-medium mb-1">第二支撐 (S2)</div>
+                                <div id="pivot-s2" class="text-base font-bold text-emerald-300">--</div>
+                            </div>
+                            <div class="bg-emerald-900/30 border border-emerald-700/40 p-2.5 rounded-lg text-center">
+                                <div class="text-[11px] text-emerald-400 font-medium mb-1">第一支撐 (S1)</div>
+                                <div id="pivot-s1" class="text-base font-bold text-emerald-200">--</div>
+                            </div>
+                            <div class="bg-blue-900/30 border border-blue-700/50 p-2.5 rounded-lg text-center">
+                                <div class="text-[11px] text-blue-400 font-medium mb-1">樞紐中心 (P)</div>
+                                <div id="pivot-p" class="text-base font-bold text-blue-200">--</div>
+                            </div>
+                            <div class="bg-red-900/30 border border-red-700/40 p-2.5 rounded-lg text-center">
+                                <div class="text-[11px] text-red-400 font-medium mb-1">第一壓力 (R1)</div>
+                                <div id="pivot-r1" class="text-base font-bold text-red-200">--</div>
+                            </div>
+                            <div class="bg-red-950/40 border border-red-800/50 p-2.5 rounded-lg text-center">
+                                <div class="text-[11px] text-red-400 font-medium mb-1">第二壓力 (R2)</div>
+                                <div id="pivot-r2" class="text-base font-bold text-red-300">--</div>
+                            </div>
+                        </div>
+
+                        <!-- Pivot Visual Chart -->
+                        <div class="h-64 w-full pt-2">
+                            <canvas id="pivotBarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Strategy Card Summary -->
+            <div class="bg-dark-card p-5 rounded-xl border border-slate-700/60 shadow-lg space-y-3">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                        🤖 AI 即時籌碼與關卡策略總結
+                    </h3>
+                    <button onclick="copyStrategy()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs rounded border border-slate-600 transition flex items-center gap-1">
+                        📋 複製今日教戰手冊
+                    </button>
+                </div>
+                <div class="text-sm text-slate-300 space-y-2 leading-relaxed bg-slate-900/60 p-4 rounded-lg border border-slate-800">
+                    <p class="font-semibold text-blue-400">📊 最新勢態與關卡診斷：</p>
+                    <ol class="list-decimal list-inside space-y-1 text-slate-300 text-xs sm:text-sm">
+                        <li><strong>多空分水嶺</strong>：今日指數在樞紐中心 <span id="summary-p-val" class="text-amber-300 font-semibold">--</span> 附近展開爭奪。</li>
+                        <li><strong>壓力與支撐關卡</strong>：向上首要壓力區 R1 落在 <span id="summary-r1-val" class="text-red-400 font-semibold">--</span>；向下首要支撐區 S1 落在 <span id="summary-s1-val" class="text-emerald-400 font-semibold">--</span>。</li>
+                        <li><strong>當沖教戰建議</strong>：開盤後若站穩 P 點且電子成交比重維持 65% 以上，可偏多操作操作順勢單；若量能不足跌破 S1，則慎防引發停損賣壓。</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: 期貨籌碼與融資 -->
+        <div id="tab2" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-dark-card p-5 rounded-xl border border-slate-700/60 shadow-lg space-y-4">
+                    <h3 class="font-bold text-slate-200 text-sm">三大法人未平倉口數 (Futures OI)</h3>
+                    <div class="h-64">
+                        <canvas id="chipChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-dark-card p-5 rounded-xl border border-slate-700/60 shadow-lg space-y-4">
+                    <h3 class="font-bold text-slate-200 text-sm">散戶小台指標 & 融資餘額趨勢</h3>
+                    <div class="h-64">
+                        <canvas id="retailChart"></canvas>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ==================== 第二頁：期貨籌碼與融資 ==================== -->
-        <div id="page-chips" style="display:none; flex-direction:column; gap:16px;">
-            <div class="glass-panel" style="border-left: 4px solid #a855f7;">
-                <h3 style="margin:0 0 12px 0; color:#c084fc; display:flex; align-items:center; gap:8px;">
-                    🎯 選擇權未平倉比率 (P/C Ratio) 與控盤大戶淨部位
-                </h3>
-                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px;">
-                    <div style="background:#0d1117; padding:12px; border-radius:6px; border:1px solid #21262d;">
-                        <div style="font-size:0.75rem; color:#8b949e;">Put / Call Ratio (未平倉比率)</div>
-                        <div style="font-size:1.4rem; font-weight:bold; color:#34d399; margin-top:4px;" id="pc-ratio-val">112.4 %</div>
-                        <div style="font-size:0.75rem; color:#34d399; margin-top:2px;">> 100% (下方 Put 支撐力強 / 偏多)</div>
-                    </div>
-                    <div style="background:#0d1117; padding:12px; border-radius:6px; border:1px solid #21262d;">
-                        <div style="font-size:0.75rem; color:#8b949e;">前五大交易人 (特定法人)</div>
-                        <div style="font-size:1.4rem; font-weight:bold; color:#58a6ff; margin-top:4px;">+12,450 口</div>
-                        <div style="font-size:0.75rem; color:#8b949e; margin-top:2px;">多單控盤比率 56.2%</div>
-                    </div>
-                    <div style="background:#0d1117; padding:12px; border-radius:6px; border:1px solid #21262d;">
-                        <div style="font-size:0.75rem; color:#8b949e;">前十大交易人 (控盤大戶)</div>
-                        <div style="font-size:1.4rem; font-weight:bold; color:#58a6ff; margin-top:4px;">+18,820 口</div>
-                        <div style="font-size:0.75rem; color:#8b949e; margin-top:2px;">大戶方向：主力偏多佈局</div>
-                    </div>
+        <!-- TAB 3: 量價累積圖 (VPVR) -->
+        <div id="tab3" class="tab-content hidden space-y-6">
+            <div class="bg-dark-card p-5 rounded-xl border border-slate-700/60 shadow-lg space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-slate-200 text-base">近 30 日成交量價累積分佈圖 (VPVR - Volume Profile)</h3>
+                    <span class="text-xs text-slate-400">尋找主要成交密集區 (POC) 與籌碼真空帶</span>
                 </div>
-            </div>
-
-            <div class="glass-panel">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                    <h3 style="margin:0; color:white;">📋 臺指期三大法人期貨交易與未平倉明細</h3>
-                    <span style="font-size:0.75rem; color:#8b949e;">資料來源：台灣期貨交易所 (TAIFEX)</span>
-                </div>
-                <div style="overflow-x:auto;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>身份別</th>
-                                <th style="text-align:right;">多方口數</th>
-                                <th style="text-align:right;">多方金額</th>
-                                <th style="text-align:right;">空方口數</th>
-                                <th style="text-align:right;">空方金額</th>
-                                <th style="text-align:right;">多空淨口數 (今日改變)</th>
-                                <th style="text-align:right;">未平倉多方</th>
-                                <th style="text-align:right;">未平倉空方</th>
-                                <th style="text-align:right;">未平倉淨口數</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td style="font-weight:bold; color:white;">自營商</td>
-                                <td style="text-align:right; color:#58a6ff;">4,020</td>
-                                <td style="text-align:right;">38,698,985</td>
-                                <td style="text-align:right; color:#f2cc60;">2,570</td>
-                                <td style="text-align:right;">24,746,953</td>
-                                <td style="text-align:right; font-weight:bold; color:#34d399;">+1,450</td>
-                                <td style="text-align:right;">3,312</td>
-                                <td style="text-align:right;">4,832</td>
-                                <td style="text-align:right; font-weight:bold; color:#f87171;">-1,520</td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight:bold; color:white;">投信</td>
-                                <td style="text-align:right; color:#58a6ff;">125</td>
-                                <td style="text-align:right;">1,203,395</td>
-                                <td style="text-align:right; color:#f2cc60;">820</td>
-                                <td style="text-align:right;">7,893,777</td>
-                                <td style="text-align:right; font-weight:bold; color:#f87171;">-695</td>
-                                <td style="text-align:right;">75,780</td>
-                                <td style="text-align:right;">2,916</td>
-                                <td style="text-align:right; font-weight:bold; color:#34d399;">+72,864</td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight:bold; color:white;">外資及陸資</td>
-                                <td style="text-align:right; color:#58a6ff;">36,223</td>
-                                <td style="text-align:right;">348,409,564</td>
-                                <td style="text-align:right; color:#f2cc60;">37,132</td>
-                                <td style="text-align:right;">357,153,247</td>
-                                <td style="text-align:right; font-weight:bold; color:#f87171;">-909</td>
-                                <td style="text-align:right;">9,675</td>
-                                <td style="text-align:right;">86,706</td>
-                                <td style="text-align:right; font-weight:bold; color:#f87171;">-77,031</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="glass-panel">
-                <h3 style="margin:0 0 12px 0; color:white;">👥 融資融券增減與散戶指標</h3>
-                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px;">
-                    <div style="background:#0d1117; padding:12px; border-radius:6px; border:1px solid #21262d;">
-                        <div style="font-size:0.75rem; color:#8b949e;">融資餘額 (億)</div>
-                        <div style="font-size:1.4rem; font-weight:bold; color:white; margin-top:4px;">2,845.2 億</div>
-                        <div style="font-size:0.75rem; color:#f87171; margin-top:2px;">當日增減: +12.5 億</div>
-                    </div>
-                    <div style="background:#0d1117; padding:12px; border-radius:6px; border:1px solid #21262d;">
-                        <div style="font-size:0.75rem; color:#8b949e;">融券餘額 (張)</div>
-                        <div style="font-size:1.4rem; font-weight:bold; color:white; margin-top:4px;">312,400 張</div>
-                        <div style="font-size:0.75rem; color:#34d399; margin-top:2px;">當日增減: -3,200 張</div>
-                    </div>
-                    <div style="background:#0d1117; padding:12px; border-radius:6px; border:1px solid #21262d;">
-                        <div style="font-size:0.75rem; color:#8b949e;">散戶小台多空比</div>
-                        <div style="font-size:1.4rem; font-weight:bold; color:#34d399; margin-top:4px;">-8.4%</div>
-                        <div style="font-size:0.75rem; color:#8b949e; margin-top:2px;">散戶偏空 / 大戶偏多</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ==================== 第三頁：VPVR ==================== -->
-        <div id="page-vpvr" style="display:none; flex-direction:column; gap:16px;">
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-                <div class="glass-panel" style="border-left: 4px solid #388bfd; margin-bottom:0;">
-                    <div style="font-size:0.75rem; color:#8b949e;">⚡ VWAP (成交量加權平均價) - 當沖主力成本</div>
-                    <div style="font-size:1.5rem; font-weight:900; color:#58a6ff; margin-top:4px;" id="vwap-val">48,012.50</div>
-                    <div style="font-size:0.7rem; color:#34d399; margin-top:2px;">現價在 VWAP 之上 (當沖多方控盤)</div>
-                </div>
-                <div class="glass-panel" style="border-left: 4px solid #d29922; margin-bottom:0;">
-                    <div style="font-size:0.75rem; color:#8b949e;">🎯 POC (最大成交量密集價格區)</div>
-                    <div style="font-size:1.5rem; font-weight:900; color:#e3b341; margin-top:4px;">47,950 - 48,050</div>
-                    <div style="font-size:0.7rem; color:#8b949e; margin-top:2px;">主力籌碼最密集換手區間</div>
-                </div>
-            </div>
-
-            <div class="glass-panel">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                    <h3 style="margin:0; color:white;">📈 近 20～60 日量價累積圖 (VPVR + 當沖水嶺 VWAP)</h3>
-                    <span style="font-size:0.75rem; color:#8b949e;">黃色標示 POC，藍色條表常態成交區</span>
-                </div>
-                <div style="height: 360px; width: 100%;">
+                <div class="h-96">
                     <canvas id="vpvrChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <!-- ==================== 第四頁：國際總經 (TradingView) ==================== -->
-        <div id="page-macro" style="display:none; flex-direction:column; gap:20px;">
-            <div class="glass-panel">
-                <h3 style="margin:0 0 12px 0; color:#58a6ff; display:flex; align-items:center; gap:8px;">
-                    📈 國際權值大盤與指數期貨 (台積電美股 / 費半 / 美股期貨 / 韓股)
-                </h3>
-                <div class="tradingview-widget-container" style="margin-bottom:12px;">
-                    <div class="tradingview-widget-container__widget"></div>
-                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-tickers.js" async>
-                    {
-                    "symbols": [
-                        { "proName": "NYSE:TSM", "title": "台積電 ADR" },
-                        { "proName": "NASDAQ:SOXX", "title": "費半 ETF (SOXX)" },
-                        { "proName": "CME_MINI:NQ1!", "title": "納斯達克期貨" },
-                        { "proName": "CME_MINI:ES1!", "title": "標普500期貨" },
-                        { "proName": "CBOT_MINI:MYM1!", "title": "道瓊期貨" },
-                        { "proName": "AMEX:EWY", "title": "韓國指數 ETF (EWY)" }
-                    ],
-                    "isTransparent": true,
-                    "showSymbolLogo": true,
-                    "colorTheme": "dark",
-                    "locale": "zh_TW"
-                    }
-                    </script>
-                </div>
-
-                <div class="tradingview-widget-container" style="height: 350px;">
-                    <div class="tradingview-widget-container__widget" style="height: 100%;"></div>
-                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
-                    {
-                    "colorTheme": "dark",
-                    "dateRange": "1D",
-                    "showChart": true,
-                    "locale": "zh_TW",
-                    "width": "100%",
-                    "height": "100%",
-                    "largeChartUrl": "",
-                    "isTransparent": true,
-                    "showSymbolLogo": true,
-                    "showFloatingTooltip": false,
-                    "plotLineColorGrowing": "rgba(239, 68, 68, 1)",
-                    "plotLineColorFalling": "rgba(34, 197, 94, 1)",
-                    "gridLineColor": "rgba(42, 46, 57, 0)",
-                    "scaleFontColor": "rgba(209, 213, 219, 1)",
-                    "belowLineFillColorGrowing": "rgba(239, 68, 68, 0.12)",
-                    "belowLineFillColorFalling": "rgba(34, 197, 94, 0.12)",
-                    "belowLineFillColorGrowingBottom": "rgba(239, 68, 68, 0)",
-                    "belowLineFillColorFallingBottom": "rgba(34, 197, 94, 0)",
-                    "symbolActiveColor": "rgba(41, 98, 255, 0.12)",
-                    "tabs": [
-                        {
-                        "title": "大盤與期貨指數",
-                        "symbols": [
-                            { "s": "NYSE:TSM", "d": "台積電 ADR (TSM)" },
-                            { "s": "NASDAQ:SOXX", "d": "費城半導體 ETF (SOXX)" },
-                            { "s": "CME_MINI:NQ1!", "d": "納斯達克 E-mini 期貨" },
-                            { "s": "CME_MINI:ES1!", "d": "標普500 E-mini 期貨" },
-                            { "s": "CBOT_MINI:MYM1!", "d": "微型道瓊期貨" },
-                            { "s": "AMEX:EWY", "d": "韓國指數 ETF (EWY)" }
-                        ]
-                        }
-                    ]
-                    }
-                    </script>
-                </div>
-            </div>
-
-            <div class="glass-panel">
-                <h3 style="margin:0 0 12px 0; color:#e3b341; display:flex; align-items:center; gap:8px;">
-                    💱 外匯與避險大宗商品 (美元指數 / 台幣 / 美債 / 黃金 / VIX恐慌指數)
-                </h3>
-                <div class="tradingview-widget-container" style="margin-bottom:12px;">
-                    <div class="tradingview-widget-container__widget"></div>
-                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-tickers.js" async>
-                    {
-                    "symbols": [
-                        { "proName": "CAPITALCOM:DXY", "title": "美元指數" },
-                        { "proName": "FX_IDC:USDTWD", "title": "美元/台幣" },
-                        { "proName": "US10Y", "title": "美國10年公債殖利率" },
-                        { "proName": "TVC:GOLD", "title": "黃金現貨" },
-                        { "proName": "TVC:VIX", "title": "VIX 恐慌指數" }
-                    ],
-                    "isTransparent": true,
-                    "showSymbolLogo": true,
-                    "colorTheme": "dark",
-                    "locale": "zh_TW"
-                    }
-                    </script>
-                </div>
-
-                <div class="tradingview-widget-container" style="height: 300px;">
-                    <div class="tradingview-widget-container__widget" style="height: 100%;"></div>
-                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
-                    {
-                    "colorTheme": "dark",
-                    "dateRange": "1D",
-                    "showChart": true,
-                    "locale": "zh_TW",
-                    "width": "100%",
-                    "height": "100%",
-                    "largeChartUrl": "",
-                    "isTransparent": true,
-                    "showSymbolLogo": true,
-                    "showFloatingTooltip": false,
-                    "plotLineColorGrowing": "rgba(239, 68, 68, 1)",
-                    "plotLineColorFalling": "rgba(34, 197, 94, 1)",
-                    "gridLineColor": "rgba(42, 46, 57, 0)",
-                    "scaleFontColor": "rgba(209, 213, 219, 1)",
-                    "belowLineFillColorGrowing": "rgba(239, 68, 68, 0.12)",
-                    "belowLineFillColorFalling": "rgba(34, 197, 94, 0.12)",
-                    "belowLineFillColorGrowingBottom": "rgba(239, 68, 68, 0)",
-                    "belowLineFillColorFallingBottom": "rgba(34, 197, 94, 0)",
-                    "symbolActiveColor": "rgba(41, 98, 255, 0.12)",
-                    "tabs": [
-                        {
-                        "title": "關鍵匯率與避險商品",
-                        "symbols": [
-                            { "s": "CAPITALCOM:DXY", "d": "美元指數" },
-                            { "s": "FX_IDC:USDTWD", "d": "美元兌新台幣" },
-                            { "s": "US10Y", "d": "美國 10 年期公債殖利率" },
-                            { "s": "TVC:GOLD", "d": "黃金現貨" },
-                            { "s": "TVC:VIX", "d": "CBOE 恐慌指數 (VIX)" }
-                        ]
-                        }
-                    ]
-                    }
-                    </script>
+        <!-- TAB 4: 國際總經 (TradingView) -->
+        <div id="tab4" class="tab-content hidden space-y-6">
+            <div class="bg-dark-card p-5 rounded-xl border border-slate-700/60 shadow-lg space-y-4">
+                <h3 class="font-bold text-slate-200 text-base">🌐 國際權值大盤與指數期貨 (台積電美股 / 費半 / 美股期貨 / 韓股)</h3>
+                <!-- TradingView Embed Widget -->
+                <div class="tradingview-widget-container" style="height: 500px; width: 100%;">
+                    <div id="tradingview_market_overview" style="height: 100%; width: 100%;"></div>
                 </div>
             </div>
         </div>
 
-        <!-- ==================== 第五頁：開盤策略與當沖教戰 ==================== -->
-        <div id="page-strategy" style="display:none; flex-direction:column; gap:16px;">
-            <div class="glass-panel">
-                <h3 style="margin:0 0 6px 0; color:#58a6ff; font-size:1.1rem; display:flex; align-items:center; gap:8px;">
-                    ⏱️ 開盤前 15 分鐘（08:30 - 08:45）當沖實戰檢核 SOP
-                </h3>
-                <p style="font-size:0.8rem; color:#8b949e; margin:0 0 12px 0;">日盤試撮階段，透過夜盤缺口、預估量與 Pivot 關卡建構精準卡位劇本：</p>
-                
-                <div class="sop-grid">
-                    <div class="sop-card">
-                        <div class="sop-step">Step 1: 查看 Gap 數值</div>
-                        <div style="font-weight:bold; color:white; font-size:0.95rem; margin-top:2px;">確認今日跳空方向與點數</div>
-                        <div style="font-size:0.8rem; color:#8b949e; margin-top:6px; line-height:1.4;">
-                            查看首頁之「夜盤跳空缺口」，判定今日屬於大缺口 (±80 ~ 100 點以上) 或常態小缺口 (±20 ~ 50 點)。
-                        </div>
+        <!-- TAB 5: 開盤策略與當沖教戰 -->
+        <div id="tab5" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-dark-card p-5 rounded-xl border border-emerald-800/40 shadow-lg space-y-3">
+                    <div class="text-emerald-400 font-bold text-base flex items-center gap-2">
+                        <span>🟢 劇本 A：跳空高開（開在 R1 之上）</span>
                     </div>
-                    <div class="sop-card">
-                        <div class="sop-step">Step 2: 對照 Pivot 關卡</div>
-                        <div style="font-weight:bold; color:white; font-size:0.95rem; margin-top:2px;">推算預估開盤落點位階</div>
-                        <div style="font-size:0.8rem; color:#8b949e; margin-top:6px; line-height:1.4;">
-                            估算價 = 昨日收盤 + Gap。對照此位置是開在 <b>樞紐 P</b> 附近，還是越過了 <b>R1/S1</b> 或逼近 <b>Call/Put 牆</b>。
-                        </div>
-                    </div>
-                    <div class="sop-card">
-                        <div class="sop-step">Step 3: 驗證預估成交量</div>
-                        <div style="font-weight:bold; color:white; font-size:0.95rem; margin-top:2px;">區分真突破與假突破</div>
-                        <div style="font-size:0.8rem; color:#8b949e; margin-top:6px; line-height:1.4;">
-                            若大跳空但預估量小於 3000 億 ➔ <b>無量假突破</b>（嚴防回補缺口）；預估量大於 4000 億 ➔ <b>有量真趨勢</b>。
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="glass-panel">
-                <h3 style="margin:0 0 16px 0; color:white; font-size:1.1rem;">💡 三大經典開盤卡位策略與實戰心法</h3>
-
-                <div class="strategy-card" style="border-left-color: #f87171;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-weight:bold; font-size:0.95rem; color:#f87171;">1. 順勢突破策略（大缺口：Gap > +80~100 點 或 < -80~100 點）</span>
-                        <span style="background:#7f1d1d; color:#fca5a5; font-size:0.7rem; padding:2px 6px; border-radius:4px;">強勢單邊趨勢行情</span>
-                    </div>
-                    <div style="font-size:0.85rem; line-height:1.6; color:#c9d1d9;">
-                        • <b>現象與心法</b>：夜盤有重大國際利多/利空，開盤直接跳開越過第一壓力 R1 或跌破 S1。<b>「不盲目追高，等待開盤前 5 分鐘 (08:45~08:50) 的回測或反彈」</b>。<br>
-                        • <b>多單動作</b>：跳高過 R1 ➔ 觀察價格拉回 <b>R1 或 VWAP</b> 附近「回測不破」且出量 ➔ 進場做多，停損設破 VWAP，目標看向 R2。<br>
-                        • <b>空單動作</b>：跳低破 S1 ➔ 觀察價格反彈至 <b>S1 或 VWAP</b> 附近「遇壓受阻」➔ 進場做空，停損設過 VWAP，目標看向 S2。
-                    </div>
+                    <ul class="text-xs text-slate-300 space-y-2 leading-relaxed list-disc list-inside">
+                        <li><strong>核心精神</strong>：強勢多頭格局，忌盲目猜頂做空。</li>
+                        <li><strong>觀察要點</strong>：開盤前 15 分鐘是否拉回測試 R1 或 P 點不破。</li>
+                        <li><strong>操作策略</strong>：拉回守住 R1 時尋求順勢做多機會，目標看向 R2。若跌破 R1 則轉為高檔震盪。</li>
+                    </ul>
                 </div>
 
-                <div class="strategy-card" style="border-left-color: #e3b341;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-weight:bold; font-size:0.95rem; color:#e3b341;">2. 缺口回補 / 逆勢卡位策略（小缺口：Gap = ±20~50 點）</span>
-                        <span style="background:#78350f; color:#fcd34d; font-size:0.7rem; padding:2px 6px; border-radius:4px;">常態震盪洗盤行情</span>
+                <div class="bg-dark-card p-5 rounded-xl border border-blue-800/40 shadow-lg space-y-3">
+                    <div class="text-blue-400 font-bold text-base flex items-center gap-2">
+                        <span>🔵 劇本 B：平盤開出（開在 S1 ~ R1 之間）</span>
                     </div>
-                    <div style="font-size:0.85rem; line-height:1.6; color:#c9d1d9;">
-                        • <b>現象與心法</b>：夜盤波動不大，開盤開在樞紐 P 與 R1/S1 之間的常態區間。<b>「力道不足以形成單邊趨勢，尋求開盤衝高/洗盤後的缺口回補機會」</b>。<br>
-                        • <b>實戰動作</b>：開盤跳高開在 P 上但未達 R1 ➔ 前 5 分鐘試圖衝高遭遇賣壓（留下長上影線或爆量滯漲）➔ 順勢建立空單 ➔ 目標看至昨日日盤收盤價（回補缺口完畢平倉）。
-                    </div>
+                    <ul class="text-xs text-slate-300 space-y-2 leading-relaxed list-disc list-inside">
+                        <li><strong>核心精神</strong>：區間震盪盤，尊重樞紐中心 P 點。</li>
+                        <li><strong>觀察要點</strong>：電子類股比重是否超過 65%，量能是否大於 3500 億。</li>
+                        <li><strong>操作策略</strong>：靠近 S1 守住可試多，靠近 R1 遇阻可試空；突破 P 點後觀察追價力道。</li>
+                    </ul>
                 </div>
 
-                <div class="strategy-card" style="border-left-color: #a855f7;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-weight:bold; font-size:0.95rem; color:#c084fc;">3. 關卡防守牆卡位策略（缺口恰好重疊莊家防守牆）</span>
-                        <span style="background:#581c87; color:#e9d5ff; font-size:0.7rem; padding:2px 6px; border-radius:4px;">莊家大壁壘攻防</span>
+                <div class="bg-dark-card p-5 rounded-xl border border-red-800/40 shadow-lg space-y-3">
+                    <div class="text-red-400 font-bold text-base flex items-center gap-2">
+                        <span>🔴 劇本 C：跳空低開（開在 S1 之下）</span>
                     </div>
-                    <div style="font-size:0.85rem; line-height:1.6; color:#c9d1d9;">
-                        • <b>現象與心法</b>：預估開盤位置剛好落在選擇權 <b>Call 牆 (48,300)</b> 或 <b>Put 牆 (47,700)</b> 附近。<b>「莊家防線極易出現第一時間的強烈避險打壓與反彈」</b>。<br>
-                        • <b>實戰動作</b>：若跳空高開直接撞到 Call 牆 ➔ <b>嚴禁第一時間追多</b> ➔ 觀察莊家壓制拉回訊號，或等待拉回測試 VWAP 穩固後再考慮。
-                    </div>
-                </div>
-            </div>
-
-            <div class="glass-panel" style="background:#111827;">
-                <h3 style="margin:0 0 10px 0; color:#34d399; font-size:1rem;">🛡️ 當沖交易風控與戒律卡片</h3>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:0.85rem; color:#9ca3af;">
-                    <div style="background:#0d1117; padding:10px; border-radius:6px; border:1px solid #1f2937;">
-                        <b style="color:white;">跌破 VWAP 嚴格停損：</b> VWAP 為當日多空平均成本，一旦做多跌破 VWAP 超過 15~20 點立即停損，切勿留單變波段。
-                    </div>
-                    <div style="background:#0d1117; padding:10px; border-radius:6px; border:1px solid #1f2937;">
-                        <b>避開 08:45 市價搶單：</b> 開盤前 1~2 分鐘價格劇烈跳動且滑點大，建議觀察至 08:50 K線收完後再依 SOP 佈局。
-                    </div>
+                    <ul class="text-xs text-slate-300 space-y-2 leading-relaxed list-disc list-inside">
+                        <li><strong>核心精神</strong>：弱勢空頭格局，防範恐慌停損賣壓。</li>
+                        <li><strong>觀察要點</strong>：反彈是否受制於 S1 或 P 點。</li>
+                        <li><strong>操作策略</strong>：反彈無法站回 S1 時尋求順勢空單點位，下方目標看 S2。切勿隨意摸底。</li>
+                    </ul>
                 </div>
             </div>
         </div>
-    </div>
 
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 border-t border-slate-800 py-4 text-center text-xs text-slate-500">
+        台指期當沖決策戰情室 &copy; 2026 | 數據僅供技術分析參考，投資請獨立審慎評估風險。
+    </footer>
+
+    <!-- JavaScript Logic -->
     <script>
-        let pivotBarChart = null;
-        let vpvrChart = null;
+        // Global State & Data
+        let marketData = {
+            close: 22850,
+            high: 22980,
+            low: 22720,
+            change: 120,
+            changePercent: 0.53,
+            date: "最新盤態"
+        };
 
-        // 頁籤切換邏輯
-        function switchTab(tabName) {
-            ['dashboard', 'chips', 'vpvr', 'macro', 'strategy'].forEach(t => {
-                document.getElementById(`page-${t}`).style.display = 'none';
-                document.getElementById(`tab-${t}`).classList.remove('active');
+        let currentPivots = { P: 0, S1: 0, S2: 0, R1: 0, R2: 0 };
+        let pivotChartInstance = null;
+
+        // Tab Switching
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('nav button').forEach(el => {
+                el.classList.remove('active-tab');
+                el.classList.add('text-slate-400');
             });
-            
-            const targetPage = document.getElementById(`page-${tabName}`);
-            targetPage.style.display = (tabName === 'dashboard') ? 'grid' : 'flex';
-            document.getElementById(`tab-${tabName}`).classList.add('active');
 
-            if (tabName === 'vpvr') {
-                renderVPVRChart();
+            document.getElementById(tabId).classList.remove('hidden');
+            const activeNav = document.getElementById('nav-' + tabId);
+            activeNav.classList.add('active-tab');
+            activeNav.classList.remove('text-slate-400');
+
+            if (tabId === 'tab4') {
+                initTradingViewWidget();
             }
         }
 
-        // 多重 CORS 代理備用機制拉取 API 數據
-        async function fetchFinMindData() {
+        // Fetch Data Strategy: Yahoo Finance / FinMind Cors Failover
+        async function fetchMarketData() {
             const statusBadge = document.getElementById('api-status-badge');
-            const targetUrl = "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=TAIEX";
             
-            // 多個代理 Endpoint 備援清單
-            const proxyEndpoints = [
-                `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
-                targetUrl // 最後直接呼叫原生 API
-            ];
-
-            let success = false;
-            let resultData = null;
-
-            for (let url of proxyEndpoints) {
-                try {
-                    console.log(`嘗試連線通道: ${url}`);
-                    const response = await fetch(url, { method: 'GET' });
-                    if (response.ok) {
-                        const resJson = await response.json();
-                        if (resJson && resJson.data && resJson.data.length > 0) {
-                            resultData = resJson.data;
-                            success = true;
-                            console.log("✅ 成功存取 FinMind API 數據！");
-                            break;
-                        }
-                    }
-                } catch (e) {
-                    console.warn(`通道連線失敗 (${url})，切換下一個...`, e);
-                }
-            }
-
-            if (success && resultData) {
-                const latest = resultData[resultData.length - 1];
-                const prev = resultData[resultData.length - 2] || latest;
+            // Try fetching from Yahoo Finance Public API (TAIEX ^TWII)
+            try {
+                const url = "https://query1.finance.yahoo.com/v8/finance/chart/^TWII?interval=1d&range=5d";
+                const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(url);
+                const res = await fetch(proxyUrl);
+                const data = await res.json();
                 
-                const h = parseFloat(latest.max);
-                const l = parseFloat(latest.min);
-                const c = parseFloat(latest.close);
-                const prevC = parseFloat(prev.close);
-                const change = c - prevC;
-                const changePct = (change / prevC) * 100;
+                const result = data.chart.result[0];
+                const meta = result.meta;
+                const quote = result.indicators.quote[0];
+                const len = quote.close.length - 1;
 
-                // 更新主界面價格資訊
-                document.getElementById('main-price').innerText = c.toLocaleString('en-US', {minimumFractionDigits: 2});
-                document.getElementById('main-high').innerText = h.toLocaleString('en-US', {minimumFractionDigits: 2});
-                document.getElementById('main-low').innerText = l.toLocaleString('en-US', {minimumFractionDigits: 2});
-                document.getElementById('main-prev').innerText = prevC.toLocaleString('en-US', {minimumFractionDigits: 2});
-                document.getElementById('data-date').innerText = `資料日期: ${latest.date}`;
+                marketData.close = meta.regularMarketPrice || quote.close[len];
+                marketData.high = meta.regularMarketDayHigh || quote.high[len];
+                marketData.low = meta.regularMarketDayLow || quote.low[len];
+                const prevClose = meta.chartPreviousClose || meta.previousClose;
+                marketData.change = marketData.close - prevClose;
+                marketData.changePercent = (marketData.change / prevClose) * 100;
+                marketData.date = new Date().toLocaleDateString('zh-TW');
 
-                const changeEl = document.getElementById('main-change');
-                changeEl.innerText = `${change >= 0 ? '+' : ''}${change.toFixed(2)} (${changePct.toFixed(2)}%)`;
-                changeEl.style.color = change >= 0 ? '#34d399' : '#f87171';
+                statusBadge.innerText = "✓ API 連線成功 (最新數據)";
+                statusBadge.className = "text-emerald-400 font-medium";
+            } catch (e) {
+                console.log("Yahoo Finance failover to FinMind API...", e);
+                // Fallback to FinMind
+                try {
+                    const fmUrl = "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=TAIEX&start_date=" + getRecentDateStr();
+                    const fmRes = await fetch(fmUrl);
+                    const fmData = await fmRes.json();
+                    if (fmData.data && fmData.data.length > 0) {
+                        const last = fmData.data[fmData.data.length - 1];
+                        marketData.close = last.close;
+                        marketData.high = last.max;
+                        marketData.low = last.min;
+                        marketData.change = last.spread;
+                        marketData.changePercent = (last.spread / (last.close - last.spread)) * 100;
+                        marketData.date = last.date;
 
-                // 自動重新計算 Pivot 關卡點位
-                const p = (h + l + c) / 3;
-                const r1 = (2 * p) - l;
-                const s1 = (2 * p) - h;
-                const r2 = p + (h - l);
-                const s2 = p - (h - l);
-
-                document.getElementById('val-p').textContent = p.toFixed(1);
-                document.getElementById('val-r1').textContent = r1.toFixed(1);
-                document.getElementById('val-s1').textContent = s1.toFixed(1);
-                document.getElementById('val-r2').textContent = r2.toFixed(1);
-                document.getElementById('val-s2').textContent = s2.toFixed(1);
-
-                // 更新診斷訊息
-                document.getElementById('diag-price').textContent = c.toFixed(2);
-                document.getElementById('diag-p').textContent = p.toFixed(1);
-                document.getElementById('diag-r1').textContent = r1.toFixed(1);
-                document.getElementById('diag-s1').textContent = s1.toFixed(1);
-
-                // 更新柱狀圖數據
-                if (pivotBarChart) {
-                    pivotBarChart.data.datasets[0].data = [47700, s1, p, c, r1, 48300];
-                    pivotBarChart.update();
+                        statusBadge.innerText = "✓ API 連線成功 (FinMind)";
+                        statusBadge.className = "text-emerald-400 font-medium";
+                    }
+                } catch (err) {
+                    console.log("Using Default Market Values", err);
+                    statusBadge.innerText = "⚠️ API 離線 (展示預設值)";
+                    statusBadge.className = "text-amber-400 font-medium";
                 }
+            }
 
-                // 顯示成功標籤
-                statusBadge.className = "status-badge status-online";
-                statusBadge.innerHTML = "✓ API 連線成功 (最新資料)";
-            } else {
-                console.warn("所有 API 通道均無法連線，使用靜態預設數據與計算機制");
-                statusBadge.className = "status-badge status-loading";
-                statusBadge.innerHTML = "⚠️ 離線預設模式";
+            updateDashboardUI();
+        }
+
+        function getRecentDateStr() {
+            const d = new Date();
+            d.setDate(d.getDate() - 5);
+            return d.toISOString().split('T')[0];
+        }
+
+        // Calculate Pivot Points
+        function calculatePivots(high, low, close) {
+            const P = (high + low + close) / 3;
+            const R1 = (2 * P) - low;
+            const S1 = (2 * P) - high;
+            const R2 = P + (high - low);
+            const S2 = P - (high - low);
+
+            return {
+                P: Math.round(P * 10) / 10,
+                S1: Math.round(S1 * 10) / 10,
+                S2: Math.round(S2 * 10) / 10,
+                R1: Math.round(R1 * 10) / 10,
+                R2: Math.round(R2 * 10) / 10
+            };
+        }
+
+        // Update Dashboard UI
+        function updateDashboardUI() {
+            document.getElementById('taiex-price').innerText = marketData.close.toLocaleString('en-US', {minimumFractionDigits: 2});
+            
+            const changeEl = document.getElementById('taiex-change');
+            const isUp = marketData.change >= 0;
+            const prefix = isUp ? '+' : '';
+            changeEl.innerText = `${prefix}${marketData.change.toFixed(2)} (${prefix}${marketData.changePercent.toFixed(2)}%)`;
+            changeEl.className = isUp ? "text-base font-semibold text-red-400" : "text-base font-semibold text-emerald-400";
+
+            document.getElementById('taiex-high').innerText = marketData.high.toLocaleString();
+            document.getElementById('taiex-low').innerText = marketData.low.toLocaleString();
+            document.getElementById('taiex-prev').innerText = (marketData.close - marketData.change).toLocaleString();
+            document.getElementById('update-timestamp').innerText = "資料日期: " + marketData.date;
+
+            // Pivots
+            const isCustom = document.getElementById('enable-custom-pivot').checked;
+            if (!isCustom) {
+                currentPivots = calculatePivots(marketData.high, marketData.low, marketData.close);
+            }
+
+            document.getElementById('pivot-p').innerText = currentPivots.P.toLocaleString();
+            document.getElementById('pivot-s1').innerText = currentPivots.S1.toLocaleString();
+            document.getElementById('pivot-s2').innerText = currentPivots.S2.toLocaleString();
+            document.getElementById('pivot-r1').innerText = currentPivots.R1.toLocaleString();
+            document.getElementById('pivot-r2').innerText = currentPivots.R2.toLocaleString();
+
+            document.getElementById('summary-p-val').innerText = currentPivots.P.toLocaleString();
+            document.getElementById('summary-r1-val').innerText = currentPivots.R1.toLocaleString();
+            document.getElementById('summary-s1-val').innerText = currentPivots.S1.toLocaleString();
+
+            renderPivotBarChart();
+        }
+
+        // Toggle Custom Pivot
+        function toggleCustomPivot() {
+            const isCustom = document.getElementById('enable-custom-pivot').checked;
+            if (!isCustom) {
+                updateDashboardUI();
             }
         }
 
-        // 一鍵複製今日教戰手冊純文字檔
-        function copyStrategyReport() {
-            const dateStr = new Date().toLocaleDateString('zh-TW');
-            const price = document.getElementById('main-price').innerText;
-            const basis = document.getElementById('basis-val').innerText;
-            const estVol = document.getElementById('est-vol').innerText;
-            const gap = document.getElementById('gap-val').innerText;
-            const elecRatio = document.getElementById('elec-ratio').innerText;
-            const pcRatio = document.getElementById('pc-ratio-val').innerText;
-            const p = document.getElementById('val-p').innerText;
-            const r1 = document.getElementById('val-r1').innerText;
-            const r2 = document.getElementById('val-r2').innerText;
-            const s1 = document.getElementById('val-s1').innerText;
-            const s2 = document.getElementById('val-s2').innerText;
-            const putWall = document.getElementById('put-wall').innerText;
-            const callWall = document.getElementById('call-wall').innerText;
-            const vwap = document.getElementById('vwap-val').innerText;
-            const tsmcR1 = document.getElementById('tsmc-r1').innerText;
-            const tsmcR2 = document.getElementById('tsmc-r2').innerText;
+        function calculateCustomPivot() {
+            const h = parseFloat(document.getElementById('custom-high').value);
+            const l = parseFloat(document.getElementById('custom-low').value);
+            const c = parseFloat(document.getElementById('custom-close').value);
 
-            const text = `📊 【台指期當沖與大盤教戰手冊】(${dateStr})
----------------------------------------
-📌 加權指數最新參考：${price}
-⚡ 當沖主力成本 VWAP：${vwap}
+            if (isNaN(h) || isNaN(l) || isNaN(c)) {
+                alert("請填寫完整的夜盤高、低、收盤數值！");
+                return;
+            }
 
-🔥 即時動態當沖指標：
- • 期現貨價差 (Basis) ：${basis}
- • 估算大盤總成交量   ：${estVol}
- • 夜盤/日盤跳空缺口  ：${gap}
- • 電子類股成交比重   ：${elecRatio} (主流關注)
-
-🎯 選擇權與大戶籌碼 (Options & Flows)：
- • P/C Ratio (未平倉比) ：${pcRatio} (偏多支撐)
- • 前十大交易人淨部位  ：+18,820 口 (主力偏多)
- • Call/Put 防守牆   ：Call ${callWall} / Put ${putWall}
-
-🎯 樞紐關卡點位 (Pivot Points)：
- • 第二壓力 (R2)：${r2}
- • 第一壓力 (R1)：${r1}
- • 樞紐中心 (P) ：${p}  (多空分水嶺)
- • 第一支撐 (S1)：${s1}
- • 第二支撐 (S2)：${s2}
-
-🪙 台積電 (2330) 權量壓力位階：
- • 第一壓力 (R1)：${tsmcR1}
- • 第二壓力 (R2)：${tsmcR2}
-
-💡 實戰策略指引：
- 1. 價格位於 VWAP (${vwap}) 與 Pivot (${p}) 之上，當沖偏多控盤。
- 2. 開盤若追價爆量突破 R1 (${r1})，關注量能是否持續達預估量(${estVol})；無量謹防假突破。
- 3. 拉回接近 S1 (${s1}) 止跌可布局低接。
----------------------------------------
-(本報告源自 TAIEX 智慧當沖分析儀表板)`;
-
-            navigator.clipboard.writeText(text).then(() => {
-                alert('✅ 已成功複製「今日教戰手冊」！可以直接貼到 LINE、Telegram 或筆記軟體。');
-            }).catch(err => {
-                console.error('複製失敗:', err);
-            });
+            document.getElementById('enable-custom-pivot').checked = true;
+            currentPivots = calculatePivots(h, l, c);
+            updateDashboardUI();
         }
 
-        // 初始化第一頁 Pivot 圖表
-        function initPivotBarChart() {
+        // Render Bar Chart for Pivots
+        function renderPivotBarChart() {
             const ctx = document.getElementById('pivotBarChart').getContext('2d');
-            if (pivotBarChart) pivotBarChart.destroy();
+            
+            if (pivotChartInstance) {
+                pivotChartInstance.destroy();
+            }
 
-            pivotBarChart = new Chart(ctx, {
+            pivotChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: ['Put最大牆', '第一支撐(S1)', '樞紐中心(P)', '當前指數', '第一壓力(R1)', 'Call最大牆'],
+                    labels: ['第二支撐 (S2)', '第一支撐 (S1)', '樞紐中心 (P)', '當前大盤', '第一壓力 (R1)', '第二壓力 (R2)'],
                     datasets: [{
-                        data: [47700, 47813.7, 47965.6, 48024.6, 48176.5, 48300],
+                        label: '點位關卡',
+                        data: [currentPivots.S2, currentPivots.S1, currentPivots.P, marketData.close, currentPivots.R1, currentPivots.R2],
                         backgroundColor: [
-                            'rgba(6, 78, 59, 0.8)',
-                            'rgba(16, 185, 129, 0.8)',
-                            'rgba(59, 130, 246, 0.8)',
-                            'rgba(245, 158, 11, 0.9)',
-                            'rgba(239, 68, 68, 0.8)',
-                            'rgba(159, 18, 57, 0.8)'
+                            '#065f46',
+                            '#047857',
+                            '#1d4ed8',
+                            '#f59e0b',
+                            '#b91c1c',
+                            '#991b1b'
                         ],
-                        borderWidth: 0,
-                        borderRadius: 4
+                        borderRadius: 6
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { min: 47500, max: 48500, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b949e' } },
-                        x: { grid: { display: false }, ticks: { color: '#8b949e', font: { size: 10 } } }
-                    }
-                }
-            });
-        }
-
-        // 初始化第三頁 VPVR 圖表
-        function renderVPVRChart() {
-            const ctx = document.getElementById('vpvrChart').getContext('2d');
-            if (vpvrChart) vpvrChart.destroy();
-
-            vpvrChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: [
-                        '48,200 - 48,400 (高檔壓力區)', 
-                        '48,050 - 48,200 (當前 VWAP 水嶺上方)', 
-                        '47,950 - 48,050 (POC 最大量 & VWAP 48012)', 
-                        '47,800 - 47,950', 
-                        '47,600 - 47,800 (強支撐區)'
-                    ],
-                    datasets: [{
-                        label: '累積成交張數',
-                        data: [2100, 4100, 9400, 3200, 1500],
-                        backgroundColor: [
-                            'rgba(56, 139, 253, 0.35)',
-                            'rgba(56, 139, 253, 0.35)',
-                            'rgba(245, 158, 11, 0.85)',
-                            'rgba(56, 139, 253, 0.35)',
-                            'rgba(56, 139, 253, 0.35)'
-                        ],
-                        borderColor: ['#388bfd', '#388bfd', '#f59e0b', '#388bfd', '#388bfd'],
-                        borderWidth: 1.5,
-                        borderRadius: 4
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: '#161b22',
-                            callbacks: {
-                                label: function(context) {
-                                    return ` 累積張數: ${context.parsed.x.toLocaleString()} 張`;
-                                }
-                            }
-                        }
+                        legend: { display: false }
                     },
                     scales: {
-                        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b949e' } },
-                        y: { grid: { display: false }, ticks: { color: '#c9d1d9', font: { weight: 'bold' } } }
+                        y: {
+                            min: Math.floor(Math.min(currentPivots.S2, marketData.close) - 100),
+                            max: Math.ceil(Math.max(currentPivots.R2, marketData.close) + 100),
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8' }
+                        }
                     }
                 }
             });
         }
 
-        function toggleManual() {
-            const checked = document.getElementById('manual-toggle').checked;
-            const form = document.getElementById('manual-form');
-            form.style.opacity = checked ? '1' : '0.4';
-            form.style.pointerEvents = checked ? 'auto' : 'none';
+        // Render Static Dummy Charts for TAB 2 & 3
+        function initSecondaryCharts() {
+            // Chip Chart
+            const ctxChip = document.getElementById('chipChart').getContext('2d');
+            new Chart(ctxChip, {
+                type: 'line',
+                data: {
+                    labels: ['5天前', '4天前', '3天前', '2天前', '昨日'],
+                    datasets: [
+                        { label: '外資未平倉', data: [-32000, -29500, -31000, -28000, -26500], borderColor: '#ef4444', fill: false },
+                        { label: '投信未平倉', data: [12000, 13500, 14000, 13800, 14200], borderColor: '#3b82f6', fill: false }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94a3b8' } } } }
+            });
+
+            // Retail Chart
+            const ctxRetail = document.getElementById('retailChart').getContext('2d');
+            new Chart(ctxRetail, {
+                type: 'bar',
+                data: {
+                    labels: ['5天前', '4天前', '3天前', '2天前', '昨日'],
+                    datasets: [
+                        { label: '散戶小台多空比 (%)', data: [15.2, 8.4, -2.1, -12.5, -8.3], backgroundColor: '#10b981' }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94a3b8' } } } }
+            });
+
+            // VPVR Chart
+            const ctxVpvr = document.getElementById('vpvrChart').getContext('2d');
+            new Chart(ctxVpvr, {
+                type: 'bar',
+                indexAxis: 'y',
+                data: {
+                    labels: ['23,200', '23,000 (R1)', '22,850 (POC)', '22,700 (S1)', '22,500'],
+                    datasets: [{
+                        label: '累積成交量',
+                        data: [12000, 35000, 68000, 42000, 18000],
+                        backgroundColor: '#3b82f6'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
         }
 
-        function calcManual() {
-            const h = parseFloat(document.getElementById('m-h').value) || 48117.54;
-            const l = parseFloat(document.getElementById('m-l').value) || 47754.72;
-            const c = parseFloat(document.getElementById('m-c').value) || 48024.60;
+        // TradingView Widget (Tab 4) - Fixed to Standard Non-Restricted Symbols
+        let tvWidgetInitialized = false;
+        function initTradingViewWidget() {
+            if (tvWidgetInitialized) return;
+            tvWidgetInitialized = true;
 
-            const p = (h + l + c) / 3;
-            const r1 = (2 * p) - l;
-            const s1 = (2 * p) - h;
-            const r2 = p + (h - l);
-            const s2 = p - (h - l);
-
-            document.getElementById('val-p').textContent = p.toFixed(1);
-            document.getElementById('val-r1').textContent = r1.toFixed(1);
-            document.getElementById('val-s1').textContent = s1.toFixed(1);
-            document.getElementById('val-r2').textContent = r2.toFixed(1);
-            document.getElementById('val-s2').textContent = s2.toFixed(1);
-
-            if (pivotBarChart) {
-                pivotBarChart.data.datasets[0].data = [47700, s1, p, c, r1, 48300];
-                pivotBarChart.update();
-            }
+            new TradingView.MediumWidget({
+                "symbols": [
+                    ["台積電 ADR", "NYSE:TSM|1D"],
+                    ["費半 ETF (SOXX)", "NASDAQ:SOXX|1D"],
+                    ["納斯達克100", "OANDA:NAS100USD|1D"],
+                    ["標普500", "FOREXCOM:SPX500USD|1D"],
+                    ["道瓊指數", "FOREXCOM:US30|1D"],
+                    ["韓國指數 ETF", "NYSEARCA:EWY|1D"]
+                ],
+                "chartOnly": false,
+                "width": "100%",
+                "height": "100%",
+                "locale": "zh_TW",
+                "colorTheme": "dark",
+                "gridLineColor": "rgba(240, 243, 246, 0.06)",
+                "trendLineColor": "#2962FF",
+                "fontColor": "#787B86",
+                "underLineColor": "rgba(41, 98, 255, 0.15)",
+                "isTransparent": true,
+                "container_id": "tradingview_market_overview"
+            });
         }
 
-        window.onload = function() {
-            initPivotBarChart();
-            fetchFinMindData();
-        };
+        // Copy Strategy
+        function copyStrategy() {
+            const text = `【台指期當沖每日決策手冊】\n` +
+                `● 加權最新收盤: ${marketData.close}\n` +
+                `● 多空樞紐點 P: ${currentPivots.P}\n` +
+                `● 第一壓力 R1: ${currentPivots.R1} / 第二壓力 R2: ${currentPivots.R2}\n` +
+                `● 第一支撐 S1: ${currentPivots.S1} / 第二支撐 S2: ${currentPivots.S2}\n` +
+                `● 當沖建議: 關注開盤前15分鐘價格與 P 點相對位置，結合電子比重決定劇本選擇。`;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                alert("已成功複製今日當沖教戰手冊至剪貼簿！");
+            });
+        }
+
+        // Init App
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchMarketData();
+            initSecondaryCharts();
+        });
     </script>
 </body>
 </html>
