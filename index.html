@@ -271,7 +271,7 @@
                 document.getElementById('api-status').innerText = '✓ 數據即時更新成功';
                 document.getElementById('api-status').style.color = 'var(--green-down)';
 
-                // --- 1. 即時指標 (相容多種 JSON 結構) ---
+                // --- 1. 即時指標 (相容多種 JSON 欄位命名) ---
                 const real = data.realtime || data.indicators || data || {};
                 const basis = Number(real.basis ?? real.price_basis ?? 0);
                 const vol = Number(real.estimated_volume ?? real.volume ?? 0);
