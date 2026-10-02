@@ -2,9 +2,9 @@ name: Update Market Data
 
 on:
   schedule:
-    # 每天台股開盤/收盤時段自動執行 (可依需求調整 CRON 時間)
+    # 每天定時執行 (可自行調整 CRON 時間)
     - cron: '0 6,10 * * 1-5'
-  workflow_dispatch: # 支援在 GitHub 介面上手動點擊觸發
+  workflow_dispatch: # 支援手動點擊執行
 
 jobs:
   update-data:
@@ -24,6 +24,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests beautifulsoup4 pandas
 
+      # 增加 ls 檢查，確保工作目錄有該檔案
+      - name: Check files
+        run: |
+          pwd
+          ls -la
+
+      # 執行抓取腳本 (請確認檔名是否與專案內的檔案一致)
       - name: Run Data Crawler
         run: |
           python fetch_data.py
