@@ -1,108 +1,499 @@
-async function initDashboard() {
-    try {
-        // 使用快取破壞參數 (Cache Buster)，強迫瀏覽器讀取最新的 data.json
-        const cacheBuster = `?v=${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-        
-        // 【已修正】補齊正確的語法結構與逗號
-        const response = await fetch('/-1/data.json' + cacheBuster, {
-            headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
-        });
-        
-        if (!response.ok) throw new Error(`HTTP 錯誤! 狀態碼: ${response.status}`);
-        
-        const data = await response.json();
-        
-        const setSafeText = (id, text) => {
-            const el = document.getElementById(id);
-            if (el) el.innerText = text;
-        };
-
-        const setSafeHTML = (id, html) => {
-            const el = document.getElementById(id);
-            if (el) el.innerHTML = html;
-        };
-
-        setSafeText('api-status', '✓ 數據即時更新成功');
-        const apiStatus = document.getElementById('api-status');
-        if (apiStatus) apiStatus.style.color = 'var(--green-down)';
-
-        // --- 1. 即時指標解析 ---
-        const real = data.realtime || data.indicators || data || {};
-        const basis = Number(real.basis ?? real.price_basis ?? 0);
-        const vol = Number(real.estimated_volume ?? real.volume ?? 0);
-        const gap = Number(real.night_gap ?? real.gap ?? 0);
-        const elec = Number(real.elec_share ?? real.elec_pct ?? 0);
-
-        setSafeText('basis-val', `${basis >= 0 ? '+' : ''}${basis} 點`);
-        setSafeText('basis-badge', basis >= 0 ? '正價差' : '逆價差');
-        
-        const basisBadge = document.getElementById('basis-badge');
-        if (basisBadge) basisBadge.className = `badge ${basis >= 0 ? 'badge-green' : 'badge-red'}`;
-
-        setSafeText('volume-val', vol ? `${vol} 億` : '--');
-        if (vol) setSafeText('volume-badge', vol > 3800 ? '爆量' : '縮量');
-
-        setSafeText('gap-val', `${gap >= 0 ? '+' : ''}${gap} 點`);
-        setSafeText('gap-badge', gap >= 0 ? '高開' : '低開');
-
-        setSafeText('elec-pct', `${elec}%`);
-        const elecBar = document.getElementById('elec-bar');
-        if (elecBar) elecBar.style.width = `${Math.min(elec, 100)}%`;
-
-        // --- 2. 大盤與 Pivot 關卡 ---
-        const t = data.taiex || data.index || data || {};
-        const price = Number(t.price ?? t.close ?? t.current_price ?? 0);
-        const change = Number(t.change ?? 0);
-        const changePct = Number(t.change_pct ?? t.change_percent ?? 0);
-
-        setSafeText('data-date', t.date || new Date().toLocaleTimeString());
-        setSafeText('main-price', price ? price.toLocaleString() : '--');
-        
-        const changeEl = document.getElementById('main-change');
-        if (changeEl) {
-            const sign = change >= 0 ? '+' : '';
-            changeEl.innerText = `${sign}${change} (${sign}${changePct}%)`;
-            changeEl.style.color = change >= 0 ? 'var(--red-up)' : 'var(--green-down)';
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台指期當衝決策戰情室</title>
+    <!-- 導入 Chart.js 圖表庫 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-dark: #0b0f19;
+            --card-bg: #131b2e;
+            --card-border: #1e293b;
+            --text-main: #f1f5f9;
+            --text-sub: #94a3b8;
+            --accent-blue: #2563eb;
+            --accent-cyan: #38bdf8;
+            --red-up: #ef4444;
+            --green-down: #10b981;
+            --yellow-warn: #f59e0b;
         }
 
-        setSafeText('val-high', t.high ? Number(t.high).toLocaleString() : '--');
-        setSafeText('val-low', t.low ? Number(t.low).toLocaleString() : '--');
-        setSafeText('val-prev', t.close_prev ? Number(t.close_prev).toLocaleString() : '--');
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-main); padding: 16px; font-size: 14px; }
 
-        const p = t.pivot || data.pivot || {};
-        const s2 = Number(p.s2 ?? 0), s1 = Number(p.s1 ?? 0), pivotP = Number(p.p ?? 0), r1 = Number(p.r1 ?? 0), r2 = Number(p.r2 ?? 0);
+        .header-bar { display: flex; align-items: center; justify-content: space-between; padding-bottom: 12px; margin-bottom: 16px; border-bottom: 1px solid var(--card-border); }
+        .logo-title { font-size: 1.25rem; font-weight: bold; display: flex; align-items: center; gap: 8px; }
+        .logo-icon { width: 12px; height: 18px; background: var(--accent-blue); border-radius: 2px; }
+        
+        .nav-tabs { display: flex; gap: 6px; background: #0f172a; padding: 4px; border-radius: 8px; border: 1px solid var(--card-border); }
+        .tab-btn { background: transparent; color: var(--text-sub); border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 0.88rem; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
+        .tab-btn.active { background: var(--accent-blue); color: #fff; }
+        .tab-btn:hover:not(.active) { color: var(--text-main); background: rgba(255,255,255,0.05); }
 
-        setSafeText('val-s2', s2 ? s2.toLocaleString() : '--');
-        setSafeText('val-s1', s1 ? s1.toLocaleString() : '--');
-        setSafeText('val-p', pivotP ? pivotP.toLocaleString() : '--');
-        setSafeText('val-r1', r1 ? r1.toLocaleString() : '--');
-        setSafeText('val-r2', r2 ? r2.toLocaleString() : '--');
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
 
-        if (pivotP > 0) {
-            renderPivotChart({ s2, s1, p: pivotP, r1, r2 }, price);
+        .dashboard-grid { display: grid; grid-template-columns: 280px 1fr; gap: 16px; }
+        .card { background: var(--card-bg); border-radius: 10px; padding: 16px; border: 1px solid var(--card-border); margin-bottom: 16px; }
+
+        .card-header { font-size: 0.9rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+        .stat-label { color: var(--text-sub); font-size: 0.8rem; margin-top: 10px; }
+        .stat-value { font-size: 1.25rem; font-weight: bold; margin-top: 2px; }
+        .badge { font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; font-weight: 600; display: inline-block; }
+        .badge-green { background: rgba(16, 185, 129, 0.15); color: var(--green-down); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-red { background: rgba(239, 68, 68, 0.15); color: var(--red-up); border: 1px solid rgba(239, 68, 68, 0.3); }
+        .badge-yellow { background: rgba(245, 158, 11, 0.15); color: var(--yellow-warn); border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-blue { background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border: 1px solid rgba(56, 189, 248, 0.3); }
+
+        .progress-bar-bg { background: #1e293b; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 6px; }
+        .progress-bar-fill { background: var(--accent-blue); height: 100%; width: 0%; transition: width 0.5s ease; }
+
+        .alert-banner { background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; padding: 12px 16px; border-radius: 8px; font-size: 0.88rem; margin-bottom: 16px; }
+
+        .main-price-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16px; }
+        .price-large { font-size: 2.2rem; font-weight: 800; line-height: 1; }
+        .price-change { font-size: 1.1rem; font-weight: 600; margin-left: 8px; }
+        .ohlc-info { text-align: right; font-size: 0.82rem; color: var(--text-sub); line-height: 1.5; }
+
+        .pivot-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; text-align: center; margin-bottom: 16px; }
+        .pivot-box { background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: 6px; padding: 10px 4px; }
+        .pivot-title { font-size: 0.72rem; color: var(--text-sub); margin-bottom: 4px; }
+        .pivot-val { font-size: 1rem; font-weight: bold; }
+
+        .calc-input-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; }
+        .calc-input-group input { background: #0f172a; border: 1px solid var(--card-border); color: #fff; padding: 6px; border-radius: 4px; width: 100%; font-size: 0.8rem; text-align: center; }
+        .btn-calc { width: 100%; background: var(--accent-blue); color: #fff; border: none; padding: 8px; border-radius: 6px; font-weight: 600; margin-top: 10px; cursor: pointer; }
+
+        .chart-container { position: relative; width: 100%; height: 320px; }
+        .two-col-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+        .ai-card { background: rgba(37, 99, 235, 0.05); border: 1px solid rgba(37, 99, 235, 0.2); border-radius: 8px; padding: 14px; margin-top: 16px; }
+        .ai-title { font-weight: bold; color: var(--accent-cyan); display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+        .scenario-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
+        .scenario-box { background: rgba(15, 23, 42, 0.6); padding: 10px; border-radius: 6px; border: 1px solid var(--card-border); font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+
+    <div class="header-bar">
+        <div class="logo-title">
+            <div class="logo-icon"></div>
+            <span>台指期當衝決策戰情室</span>
+        </div>
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="switchTab('overview', this)">📊 大盤總覽與 AI 交易建議</button>
+            <button class="tab-btn" onclick="switchTab('chips', this)">📜 期貨籌碼與融資</button>
+            <button class="tab-btn" onclick="switchTab('vpvr', this)">📈 量價累積圖 (VPVR)</button>
+            <button class="tab-btn" onclick="switchTab('macro', this)">🌐 國際總經 (TradingView)</button>
+            <button class="tab-btn" onclick="switchTab('strategy', this)">🎯 開盤策略與當衝教戰</button>
+        </div>
+    </div>
+
+    <!-- TAB 1: 大盤總覽與 AI 交易建議 -->
+    <div id="tab-overview" class="tab-content active">
+        <div class="dashboard-grid">
+            <div>
+                <div class="card">
+                    <div class="card-header">
+                        <span>● 當衝即時動態指標</span>
+                    </div>
+                    
+                    <div class="stat-label">期現貨價差 (Basis)</div>
+                    <div class="stat-value" id="basis-val">-- <span class="badge badge-blue" id="basis-badge">讀取中</span></div>
+
+                    <div class="stat-label" style="margin-top:14px;">大盤預估成交量</div>
+                    <div class="stat-value" id="volume-val">-- <span class="badge badge-yellow" id="volume-badge">--</span></div>
+
+                    <div class="stat-label" style="margin-top:14px;">夜盤跳空缺口 (Night Gap)</div>
+                    <div class="stat-value" id="gap-val">-- <span class="badge badge-blue" id="gap-badge">--</span></div>
+
+                    <div class="stat-label" style="margin-top:14px;">電子類股成交比重</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px;">
+                        <span style="font-weight:bold;" id="elec-pct">-- %</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="elec-bar"></div>
+                    </div>
+
+                    <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--card-border); font-size: 0.78rem; color: var(--text-sub); display: flex; justify-content: space-between;">
+                        <span>數據狀態:</span>
+                        <span style="color: var(--yellow-warn);" id="api-status">連線讀取中...</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>⚡ 手動 / 夜盤 Pivot 計算器</span>
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-sub);">自訂夜盤高低收 (H/L/C) 試算最新關卡：</div>
+                    
+                    <div class="calc-input-group">
+                        <div><div style="font-size:0.7rem; color:var(--text-sub);">夜高 (High)</div><input type="number" id="calc-h" placeholder="最高"></div>
+                        <div><div style="font-size:0.7rem; color:var(--text-sub);">夜低 (Low)</div><input type="number" id="calc-l" placeholder="最低"></div>
+                        <div><div style="font-size:0.7rem; color:var(--text-sub);">夜收 (Close)</div><input type="number" id="calc-c" placeholder="收盤"></div>
+                    </div>
+                    <button class="btn-calc" onclick="calculateManualPivot()">重新計算關卡點位</button>
+                </div>
+            </div>
+
+            <div>
+                <div class="alert-banner" id="ai-alert-banner">
+                    ⚠️ 數據更新中，請稍候...
+                </div>
+
+                <div class="card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+                        <div>
+                            <span style="font-size: 0.85rem; color: var(--text-sub);">TAIEX 加權指數</span>
+                            <span class="badge badge-blue" style="margin-left: 6px;">實時連線</span>
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--text-sub);">
+                            更新時間: <span id="data-date">--</span>
+                        </div>
+                    </div>
+
+                    <div class="main-price-row">
+                        <div>
+                            <span class="price-large" id="main-price">--</span>
+                            <span class="price-change" id="main-change">--</span>
+                        </div>
+                        <div class="ohlc-info">
+                            最高: <span id="val-high">--</span><br>
+                            最低: <span id="val-low">--</span><br>
+                            昨收: <span id="val-prev">--</span>
+                        </div>
+                    </div>
+
+                    <div class="pivot-grid">
+                        <div class="pivot-box" style="border-color: rgba(16, 185, 129, 0.4);"><div class="pivot-title">第二支撐 (S2)</div><div class="pivot-val" id="val-s2" style="color:#10b981;">--</div></div>
+                        <div class="pivot-box" style="border-color: rgba(16, 185, 129, 0.7);"><div class="pivot-title">第一支撐 (S1)</div><div class="pivot-val" id="val-s1" style="color:#10b981;">--</div></div>
+                        <div class="pivot-box" style="border-color: var(--accent-blue); background: rgba(37, 99, 235, 0.1);"><div class="pivot-title">樞紐中心 (P)</div><div class="pivot-val" id="val-p" style="color:#38bdf8;">--</div></div>
+                        <div class="pivot-box" style="border-color: rgba(239, 68, 68, 0.7);"><div class="pivot-title">第一壓力 (R1)</div><div class="pivot-val" id="val-r1" style="color:#ef4444;">--</div></div>
+                        <div class="pivot-box" style="border-color: rgba(239, 68, 68, 0.4);"><div class="pivot-title">第二壓力 (R2)</div><div class="pivot-val" id="val-r2" style="color:#ef4444;">--</div></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="pivotBarChart"></canvas>
+                    </div>
+
+                    <div class="ai-card">
+                        <div class="ai-title">🤖 AI 盤中交易策略建議</div>
+                        <p style="color: var(--text-sub); font-size: 0.88rem;" id="ai-summary-text">
+                            正在讀取最新行情與籌碼...
+                        </p>
+                        <div class="scenario-grid">
+                            <div class="scenario-box">
+                                <strong style="color: var(--red-up);">📈 劇本 A：多頭突破卡位</strong>
+                                <p style="color: var(--text-sub); margin-top: 4px;" id="ai-scenario-a">--</p>
+                            </div>
+                            <div class="scenario-box">
+                                <strong style="color: var(--green-down);">📉 劇本 B：空頭假突破假拉回</strong>
+                                <p style="color: var(--text-sub); margin-top: 4px;" id="ai-scenario-b">--</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: 期貨籌碼與融資 -->
+    <div id="tab-chips" class="tab-content">
+        <div class="two-col-grid">
+            <div class="card">
+                <div class="card-header">
+                    <span>台指期三大法人未平倉口數 (TXF OI)</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="oiChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <span>散戶小台指標 (MXF 散戶多空比 %)</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="retailChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: 量價累積圖 (VPVR) -->
+    <div id="tab-vpvr" class="tab-content">
+        <div class="card">
+            <div class="card-header">
+                <span>近 30 日成交量累積分佈圖 (VPVR - Volume Profile)</span>
+            </div>
+            <div class="chart-container" style="height: 420px;">
+                <canvas id="vpvrChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: 國際總經 -->
+    <div id="tab-macro" class="tab-content">
+        <div class="card" style="padding: 20px;">
+            <h3 style="margin-bottom:12px;">🌐 國際總經實時走勢 (TradingView)</h3>
+            <div style="height: 500px; background: #0f172a; border-radius: 8px; overflow: hidden;">
+                <iframe src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_1&symbol=CME_MINI%3AES1!&interval=D&hidesidetoolbar=1&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=%5B%5D&theme=dark&style=1&timezone=Asia%2FTaipei" style="width: 100%; height: 100%; border: none;"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 5: 開盤策略 -->
+    <div id="tab-strategy" class="tab-content">
+        <div class="card" style="padding: 24px;">
+            <h2 style="margin-bottom: 16px;">🎯 開盤策略與台指期當衝教戰手冊</h2>
+            <p>1. 確認 Night Gap 缺口與 P 點支撐。<br>2. 留意開盤前 15 分鐘電子股成交比重與預估量變化。</p>
+        </div>
+    </div>
+
+    <script>
+        let pivotChartObj, oiChartObj, retailChartObj, vpvrChartObj;
+
+        function switchTab(tabId, btnEl) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            btnEl.classList.add('active');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
         }
 
-        // --- 3. AI 策略建議 ---
-        const ai = data.ai_analysis || data.ai || {};
-        setSafeHTML('ai-alert-banner', `⚠️ <strong>AI 盤勢提醒：</strong> ${ai.alert_banner || ai.alert || '今日盤勢區間震盪，請注意風控'}`);
-        setSafeHTML('ai-summary-text', ai.summary || ai.description || '目前數據分析完成。');
-        setSafeText('ai-scenario-a', ai.scenario_a || ai.plan_a || '突破站穩 P 點追多');
-        setSafeText('ai-scenario-b', ai.scenario_b || ai.plan_b || '跌破 S1 關卡停損');
+        async function initDashboard() {
+            try {
+                // 使用快取破壞參數 (Cache Buster)，強迫瀏覽器讀取最新的 data.json
+                const cacheBuster = `?v=${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+                
+                // 【已修正】補齊語法與正確逗號
+                const response = await fetch('/-1/data.json' + cacheBuster, {
+                    headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+                });
+                
+                if (!response.ok) throw new Error(`HTTP 錯誤! 狀態碼: ${response.status}`);
+                
+                const data = await response.json();
+                
+                const setSafeText = (id, text) => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerText = text;
+                };
 
-        // --- 4. 籌碼與 VPVR 圖表 ---
-        if (data.chips && typeof data.chips === 'object') {
-            renderChipsCharts(data.chips);
-        }
-        if (data.vpvr && typeof data.vpvr === 'object') {
-            renderVPVRChart(data.vpvr);
+                const setSafeHTML = (id, html) => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerHTML = html;
+                };
+
+                setSafeText('api-status', '✓ 數據即時更新成功');
+                const apiStatus = document.getElementById('api-status');
+                if (apiStatus) apiStatus.style.color = 'var(--green-down)';
+
+                // --- 1. 即時指標解析 ---
+                const real = data.realtime || data.indicators || data || {};
+                const basis = Number(real.basis ?? real.price_basis ?? 0);
+                const vol = Number(real.estimated_volume ?? real.volume ?? 0);
+                const gap = Number(real.night_gap ?? real.gap ?? 0);
+                const elec = Number(real.elec_share ?? real.elec_pct ?? 0);
+
+                setSafeText('basis-val', `${basis >= 0 ? '+' : ''}${basis} 點`);
+                setSafeText('basis-badge', basis >= 0 ? '正價差' : '逆價差');
+                
+                const basisBadge = document.getElementById('basis-badge');
+                if (basisBadge) basisBadge.className = `badge ${basis >= 0 ? 'badge-green' : 'badge-red'}`;
+
+                setSafeText('volume-val', vol ? `${vol} 億` : '--');
+                if (vol) setSafeText('volume-badge', vol > 3800 ? '爆量' : '縮量');
+
+                setSafeText('gap-val', `${gap >= 0 ? '+' : ''}${gap} 點`);
+                setSafeText('gap-badge', gap >= 0 ? '高開' : '低開');
+
+                setSafeText('elec-pct', `${elec}%`);
+                const elecBar = document.getElementById('elec-bar');
+                if (elecBar) elecBar.style.width = `${Math.min(elec, 100)}%`;
+
+                // --- 2. 大盤與 Pivot 關卡 ---
+                const t = data.taiex || data.index || data || {};
+                const price = Number(t.price ?? t.close ?? t.current_price ?? 0);
+                const change = Number(t.change ?? 0);
+                const changePct = Number(t.change_pct ?? t.change_percent ?? 0);
+
+                setSafeText('data-date', t.date || new Date().toLocaleTimeString());
+                setSafeText('main-price', price ? price.toLocaleString() : '--');
+                
+                const changeEl = document.getElementById('main-change');
+                if (changeEl) {
+                    const sign = change >= 0 ? '+' : '';
+                    changeEl.innerText = `${sign}${change} (${sign}${changePct}%)`;
+                    changeEl.style.color = change >= 0 ? 'var(--red-up)' : 'var(--green-down)';
+                }
+
+                setSafeText('val-high', t.high ? Number(t.high).toLocaleString() : '--');
+                setSafeText('val-low', t.low ? Number(t.low).toLocaleString() : '--');
+                setSafeText('val-prev', t.close_prev ? Number(t.close_prev).toLocaleString() : '--');
+
+                const p = t.pivot || data.pivot || {};
+                const s2 = Number(p.s2 ?? 0), s1 = Number(p.s1 ?? 0), pivotP = Number(p.p ?? 0), r1 = Number(p.r1 ?? 0), r2 = Number(p.r2 ?? 0);
+
+                setSafeText('val-s2', s2 ? s2.toLocaleString() : '--');
+                setSafeText('val-s1', s1 ? s1.toLocaleString() : '--');
+                setSafeText('val-p', pivotP ? pivotP.toLocaleString() : '--');
+                setSafeText('val-r1', r1 ? r1.toLocaleString() : '--');
+                setSafeText('val-r2', r2 ? r2.toLocaleString() : '--');
+
+                if (pivotP > 0) {
+                    renderPivotChart({ s2, s1, p: pivotP, r1, r2 }, price);
+                }
+
+                // --- 3. AI 策略建議 ---
+                const ai = data.ai_analysis || data.ai || {};
+                setSafeHTML('ai-alert-banner', `⚠️ <strong>AI 盤勢提醒：</strong> ${ai.alert_banner || ai.alert || '今日盤勢區間震盪，請注意風控'}`);
+                setSafeHTML('ai-summary-text', ai.summary || ai.description || '目前數據分析完成。');
+                setSafeText('ai-scenario-a', ai.scenario_a || ai.plan_a || '突破站穩 P 點追多');
+                setSafeText('ai-scenario-b', ai.scenario_b || ai.plan_b || '跌破 S1 關卡停損');
+
+                // --- 4. 籌碼與 VPVR 圖表 ---
+                if (data.chips && typeof data.chips === 'object') {
+                    renderChipsCharts(data.chips);
+                }
+                if (data.vpvr && typeof data.vpvr === 'object') {
+                    renderVPVRChart(data.vpvr);
+                }
+
+            } catch (err) {
+                console.error("解析 JSON 時發生錯誤:", err);
+                const apiStatus = document.getElementById('api-status');
+                if (apiStatus) {
+                    apiStatus.innerText = '❌ 讀取失敗，請確認 data.json 格式或 GitHub Pages 更新狀態';
+                    apiStatus.style.color = 'var(--red-up)';
+                }
+            }
         }
 
-    } catch (err) {
-        console.error("解析 JSON 時發生錯誤:", err);
-        const apiStatus = document.getElementById('api-status');
-        if (apiStatus) {
-            apiStatus.innerText = '❌ 讀取失敗，請確認 data.json 格式或 GitHub Pages 更新狀態';
-            apiStatus.style.color = 'var(--red-up)';
+        function renderPivotChart(p, currentPrice) {
+            const ctx = document.getElementById('pivotBarChart')?.getContext('2d');
+            if (!ctx) return;
+            if (pivotChartObj) pivotChartObj.destroy();
+
+            pivotChartObj = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['第二支撐 (S2)', '第一支撐 (S1)', '樞紐中心 (P)', '當前價格', '第一壓力 (R1)', '第二壓力 (R2)'],
+                    datasets: [{
+                        data: [p.s2, p.s1, p.p, currentPrice, p.r1, p.r2],
+                        backgroundColor: ['#10b981', '#10b981', '#2563eb', '#f59e0b', '#ef4444', '#ef4444'],
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { min: p.s2 > 0 ? Math.floor(p.s2 * 0.99) : undefined, grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
         }
-    }
-}
+
+        function renderChipsCharts(chips) {
+            const dates = chips.dates || [];
+            if (!dates.length) return;
+
+            const ctx1 = document.getElementById('oiChart')?.getContext('2d');
+            if (ctx1) {
+                if (oiChartObj) oiChartObj.destroy();
+                oiChartObj = new Chart(ctx1, {
+                    type: 'bar',
+                    data: {
+                        labels: dates,
+                        datasets: [
+                            { label: '外資未平倉 (口)', data: chips.foreign_oi || [], backgroundColor: '#ef4444' },
+                            { label: '投信未平倉 (口)', data: chips.investment_trust_oi || [], backgroundColor: '#2563eb' }
+                        ]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { labels: { color: '#94a3b8' } } },
+                        scales: { y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }, x: { grid: { display: false }, ticks: { color: '#94a3b8' } } }
+                    }
+                });
+            }
+
+            const ctx2 = document.getElementById('retailChart')?.getContext('2d');
+            if (ctx2) {
+                if (retailChartObj) retailChartObj.destroy();
+                retailChartObj = new Chart(ctx2, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: '散戶多空比 (%)',
+                            data: chips.retail_ratio || [],
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                            fill: true, tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { labels: { color: '#94a3b8' } } },
+                        scales: { y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }, x: { grid: { display: false }, ticks: { color: '#94a3b8' } } }
+                    }
+                });
+            }
+        }
+
+        function renderVPVRChart(vpvr) {
+            const ctx = document.getElementById('vpvrChart')?.getContext('2d');
+            if (!ctx) return;
+            if (vpvrChartObj) vpvrChartObj.destroy();
+
+            const prices = vpvr.prices || [];
+            if (!prices.length) return;
+
+            const bgColors = prices.map(p => String(p).includes('POC') ? '#ef4444' : '#2563eb');
+
+            vpvrChartObj = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: prices,
+                    datasets: [{ label: '成交量累積', data: vpvr.volumes || [], backgroundColor: bgColors, borderRadius: 4 }]
+                },
+                options: {
+                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }, y: { grid: { display: false }, ticks: { color: '#f1f5f9' } } }
+                }
+            });
+        }
+
+        function calculateManualPivot() {
+            const h = parseFloat(document.getElementById('calc-h').value);
+            const l = parseFloat(document.getElementById('calc-l').value);
+            const c = parseFloat(document.getElementById('calc-c').value);
+
+            if (isNaN(h) || isNaN(l) || isNaN(c)) {
+                alert('請輸入完整的夜盤最高、最低與收盤價格！');
+                return;
+            }
+
+            const p = (h + l + c) / 3;
+            const r1 = (2 * p) - l;
+            const s1 = (2 * p) - h;
+            const r2 = p + (h - l);
+            const s2 = p - (h - l);
+
+            setSafeText('val-p', p.toFixed(1));
+            setSafeText('val-r1', r1.toFixed(1));
+            setSafeText('val-s1', s1.toFixed(1));
+            setSafeText('val-r2', r2.toFixed(1));
+            setSafeText('val-s2', s2.toFixed(1));
+
+            renderPivotChart({ p, r1, r2, s1, s2 }, c);
+        }
+
+        window.onload = initDashboard;
+    </script>
+</body>
+</html>
