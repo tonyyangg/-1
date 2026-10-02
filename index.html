@@ -33,20 +33,20 @@
                 <div class="w-3 h-8 bg-blue-500 rounded"></div>
                 <h1 class="text-xl font-bold tracking-wide">台指期當沖決策戰情室</h1>
             </div>
-            <nav class="flex space-x-1 sm:space-x-4 text-sm font-medium">
-                <button onclick="switchTab('tab1')" id="nav-tab1" class="px-3 py-2 rounded-md active-tab flex items-center gap-1">
+            <nav class="flex space-x-1 sm:space-x-4 text-sm font-medium overflow-x-auto">
+                <button onclick="switchTab('tab1')" id="nav-tab1" class="px-3 py-2 rounded-md active-tab flex items-center gap-1 whitespace-nowrap">
                     📊 大盤總覽與 AI 交易建議
                 </button>
-                <button onclick="switchTab('tab2')" id="nav-tab2" class="px-3 py-2 rounded-md text-slate-400 hover:text-slate-200 flex items-center gap-1">
+                <button onclick="switchTab('tab2')" id="nav-tab2" class="px-3 py-2 rounded-md text-slate-400 hover:text-slate-200 flex items-center gap-1 whitespace-nowrap">
                     📜 期貨籌碼與融資
                 </button>
-                <button onclick="switchTab('tab3')" id="nav-tab3" class="px-3 py-2 rounded-md text-slate-400 hover:text-slate-200 flex items-center gap-1">
+                <button onclick="switchTab('tab3')" id="nav-tab3" class="px-3 py-2 rounded-md text-slate-400 hover:text-slate-200 flex items-center gap-1 whitespace-nowrap">
                     📈 量價累積圖 (VPVR)
                 </button>
-                <button onclick="switchTab('tab4')" id="nav-tab4" class="px-3 py-2 rounded-md text-slate-400 hover:text-slate-200 flex items-center gap-1">
+                <button onclick="switchTab('tab4')" id="nav-tab4" class="px-3 py-2 rounded-md text-slate-400 hover:text-slate-200 flex items-center gap-1 whitespace-nowrap">
                     🌐 國際總經 (TradingView)
                 </button>
-                <button onclick="switchTab('tab5')" id="nav-tab5" class="px-3 py-2 rounded-md text-slate-400 hover:text-slate-200 flex items-center gap-1">
+                <button onclick="switchTab('tab5')" id="nav-tab5" class="px-3 py-2 rounded-md text-slate-400 hover:text-slate-200 flex items-center gap-1 whitespace-nowrap">
                     🎯 開盤策略與當沖教戰
                 </button>
             </nav>
@@ -328,6 +328,7 @@
         let pivotChartInstance = null;
         let chipChartInstance = null;
         let retailChartInstance = null;
+        let vpvrChartInstance = null;
 
         // Tab Switching
         function switchTab(tabId) {
@@ -342,7 +343,11 @@
             activeNav.classList.add('active-tab');
             activeNav.classList.remove('text-slate-400');
 
-            if (tabId === 'tab4') {
+            if (tabId === 'tab2' && !chipChartInstance) {
+                initSecondaryCharts();
+            } else if (tabId === 'tab3' && !vpvrChartInstance) {
+                initVPVRChart();
+            } else if (tabId === 'tab4') {
                 initTradingViewWidget();
             }
         }
@@ -595,95 +600,138 @@
                 data: {
                     labels: dates,
                     datasets: [
-                        { label: '外資未平倉淨口數', data: foreignOI, borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', fill: true, tension: 0.2 },
-                        { label: '投信未平倉淨口數', data: investmentTrustOI, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, tension: 0.2 }
+                        {
+                            label: '外資期貨淨口數',
+                            data: foreignOI,
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: '投信期貨淨口數',
+                            data: investmentTrustOI,
+                            borderColor: '#10b981',
+                            backgroundColor: 'transparent',
+                            borderDash: [5, 5],
+                            tension: 0.3
+                        }
                     ]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94a3b8' } } }, scales: { y: { grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#94a3b8' } }, x: { ticks: { color: '#94a3b8' } } } }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#94a3b8' } } },
+                    scales: {
+                        y: { grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#94a3b8' } },
+                        x: { grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#94a3b8' } }
+                    }
+                }
             });
 
-            // Render Real Retail Ratio Chart
+            // Render Retail Chart
             const ctxRetail = document.getElementById('retailChart').getContext('2d');
             if (retailChartInstance) retailChartInstance.destroy();
             retailChartInstance = new Chart(ctxRetail, {
                 type: 'bar',
                 data: {
                     labels: dates,
-                    datasets: [
-                        { 
-                            label: '散戶小台多空比 (%)', 
-                            data: retailRatio, 
-                            backgroundColor: retailRatio.map(v => v >= 0 ? '#10b981' : '#ef4444') 
-                        }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#94a3b8' } } }, scales: { y: { grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#94a3b8' } }, x: { ticks: { color: '#94a3b8' } } } }
-            });
-
-            // VPVR Chart
-            const ctxVpvr = document.getElementById('vpvrChart').getContext('2d');
-            new Chart(ctxVpvr, {
-                type: 'bar',
-                indexAxis: 'y',
-                data: {
-                    labels: ['23,200', '23,000 (R1)', '22,850 (POC)', '22,700 (S1)', '22,500'],
                     datasets: [{
-                        label: '累積成交量',
-                        data: [12000, 35000, 68000, 42000, 18000],
-                        backgroundColor: '#3b82f6'
+                        label: '散戶多空比 (%)',
+                        data: retailRatio,
+                        backgroundColor: retailRatio.map(v => v >= 0 ? 'rgba(239, 68, 68, 0.7)' : 'rgba(16, 185, 129, 0.7)'),
+                        borderRadius: 4
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#94a3b8' } } },
+                    scales: {
+                        y: { grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#94a3b8' } },
+                        x: { grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#94a3b8' } }
+                    }
+                }
             });
         }
 
-        // TradingView Widget (Tab 4)
-        let tvWidgetInitialized = false;
-        function initTradingViewWidget() {
-            if (tvWidgetInitialized) return;
-            tvWidgetInitialized = true;
-
-            new TradingView.MediumWidget({
-                "symbols": [
-                    ["台積電 ADR", "NYSE:TSM|1D"],
-                    ["費半 ETF (SOXX)", "NASDAQ:SOXX|1D"],
-                    ["納斯達克100", "OANDA:NAS100USD|1D"],
-                    ["標普500", "FOREXCOM:SPX500USD|1D"],
-                    ["道瓊指數", "FOREXCOM:US30|1D"],
-                    ["韓國指數 ETF", "NYSEARCA:EWY|1D"]
-                ],
-                "chartOnly": false,
-                "width": "100%",
-                "height": "100%",
-                "locale": "zh_TW",
-                "colorTheme": "dark",
-                "gridLineColor": "rgba(240, 243, 246, 0.06)",
-                "trendLineColor": "#2962FF",
-                "fontColor": "#787B86",
-                "underLineColor": "rgba(41, 98, 255, 0.15)",
-                "isTransparent": true,
-                "container_id": "tradingview_market_overview"
-            });
-        }
-
-        // Copy Strategy
-        function copyStrategy() {
-            const text = `【台指期當沖每日決策手冊】\n` +
-                `● 加權最新收盤: ${marketData.close}\n` +
-                `● 多空樞紐點 P: ${currentPivots.P}\n` +
-                `● 第一壓力 R1: ${currentPivots.R1} / 第二壓力 R2: ${currentPivots.R2}\n` +
-                `● 第一支撐 S1: ${currentPivots.S1} / 第二支撐 S2: ${currentPivots.S2}\n` +
-                `● 當沖建議: 關注開盤前15分鐘價格與 P 點相對位置，結合電子比重決定劇本選擇。`;
+        // Render TAB 3: VPVR Chart (Volume Profile)
+        function initVPVRChart() {
+            const ctxVPVR = document.getElementById('vpvrChart').getContext('2d');
             
-            navigator.clipboard.writeText(text).then(() => {
-                alert("已成功複製今日當沖教戰手冊至剪貼簿！");
+            // Simulating price distribution bins around current price
+            const basePrice = marketData.close || 22850;
+            const priceBins = [];
+            const volumeData = [12000, 18500, 29000, 45000, 68000, 95000, 142000, 88000, 52000, 31000, 19000, 11000];
+            
+            for (let i = -6; i < 6; i++) {
+                priceBins.push((basePrice + i * 50).toLocaleString());
+            }
+
+            vpvrChartInstance = new Chart(ctxVPVR, {
+                type: 'bar',
+                data: {
+                    labels: priceBins,
+                    datasets: [{
+                        label: '累積成交量 (口/張)',
+                        data: volumeData,
+                        backgroundColor: volumeData.map((v, i) => i === 6 ? '#f59e0b' : 'rgba(59, 130, 246, 0.6)'),
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#94a3b8' } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataIndex === 6 ? `POC 主要成交密集區: ${context.raw} 口` : `成交量: ${context.raw} 口`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#94a3b8' } }
+                    }
+                }
             });
         }
 
-        // Init App
+        // Render TAB 4: TradingView Market Overview Widget
+        function initTradingViewWidget() {
+            const container = document.getElementById('tradingview_market_overview');
+            if (container && container.children.length === 0) {
+                new TradingView.widget({
+                    "autosize": true,
+                    "symbol": "TAIEX",
+                    "interval": "D",
+                    "timezone": "Asia/Taipei",
+                    "theme": "dark",
+                    "style": "1",
+                    "locale": "zh_TW",
+                    "toolbar_bg": "#f1f3f6",
+                    "enable_publishing": false,
+                    "allow_symbol_change": true,
+                    "container_id": "tradingview_market_overview"
+                });
+            }
+        }
+
+        // Copy Strategy Text
+        function copyStrategy() {
+            const text = `【台指期當沖教戰手冊】\n- 樞紐中心 (P)：${currentPivots.P}\n- 第一壓力 (R1)：${currentPivots.R1}\n- 第一支撐 (S1)：${currentPivots.S1}\n- 建議：站穩 P 點且電子比重>65% 偏多順勢；跌破 S1 嚴守停損。`;
+            navigator.clipboard.writeText(text).then(() => {
+                alert("教戰手冊已成功複製至剪貼簿！");
+            });
+        }
+
+        // Initialize App
         window.addEventListener('DOMContentLoaded', () => {
             fetchMarketData();
-            initSecondaryCharts();
         });
     </script>
 </body>
