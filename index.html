@@ -101,7 +101,7 @@
                     </div>
                     
                     <div class="stat-label">期現貨價差 (Basis)</div>
-                    <div class="stat-value" id="basis-val">-- <span class="badge badge-blue" id="basis-badge">無數據</span></div>
+                    <div class="stat-value" id="basis-val">-- <span class="badge badge-blue" id="basis-badge">讀取中</span></div>
 
                     <div class="stat-label" style="margin-top:14px;">大盤預估成交量</div>
                     <div class="stat-value" id="volume-val">-- <span class="badge badge-yellow" id="volume-badge">--</span></div>
@@ -111,7 +111,7 @@
 
                     <div class="stat-label" style="margin-top:14px;">電子類股成交比重</div>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px;">
-                        <span style="font-weight:bold;" id="elec-pct">0.0 %</span>
+                        <span style="font-weight:bold;" id="elec-pct">-- %</span>
                     </div>
                     <div class="progress-bar-bg">
                         <div class="progress-bar-fill" id="elec-bar"></div>
@@ -119,7 +119,7 @@
 
                     <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--card-border); font-size: 0.78rem; color: var(--text-sub); display: flex; justify-content: space-between;">
                         <span>數據狀態:</span>
-                        <span style="color: var(--green-down);" id="api-status">讀取中...</span>
+                        <span style="color: var(--yellow-warn);" id="api-status">連線讀取中...</span>
                     </div>
                 </div>
 
@@ -156,7 +156,7 @@
 
                     <div class="main-price-row">
                         <div>
-                            <span class="price-large" id="main-price">0.00</span>
+                            <span class="price-large" id="main-price">--</span>
                             <span class="price-change" id="main-change">--</span>
                         </div>
                         <div class="ohlc-info">
@@ -181,7 +181,7 @@
                     <div class="ai-card">
                         <div class="ai-title">🤖 AI 盤中交易策略建議</div>
                         <p style="color: var(--text-sub); font-size: 0.88rem;" id="ai-summary-text">
-                            正在分析最新數據...
+                            正在讀取最新行情與籌碼...
                         </p>
                         <div class="scenario-grid">
                             <div class="scenario-box">
@@ -263,12 +263,16 @@
 
         async function initDashboard() {
             try {
-                const response = await fetch('./data.json?t=' + Date.now());
-                if (!response.ok) throw new Error('無法取得 data.json');
+                // 使用快取破壞參數 (Cache Buster)，強迫 GitHub Pages 讀取最新的 data.json
+                const cacheBuster = `?v=${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+                const response = await fetch('./data.json' + cacheBuster, {
+                    headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+                });
+                
+                if (!response.ok) throw new Error(`HTTP 錯誤! 狀態碼: ${response.status}`);
                 
                 const data = await response.json();
                 
-                // 輔助安全賦值機制，防止 ID 不存在時報錯崩潰
                 const setSafeText = (id, text) => {
                     const el = document.getElementById(id);
                     if (el) el.innerText = text;
@@ -283,7 +287,7 @@
                 const apiStatus = document.getElementById('api-status');
                 if (apiStatus) apiStatus.style.color = 'var(--green-down)';
 
-                // --- 1. 即時指標 (相容多種 JSON 結構與欄位名稱) ---
+                // --- 1. 即時指標解析 ---
                 const real = data.realtime || data.indicators || data || {};
                 const basis = Number(real.basis ?? real.price_basis ?? 0);
                 const vol = Number(real.estimated_volume ?? real.volume ?? 0);
@@ -313,7 +317,7 @@
                 const changePct = Number(t.change_pct ?? t.change_percent ?? 0);
 
                 setSafeText('data-date', t.date || new Date().toLocaleTimeString());
-                setSafeText('main-price', price ? price.toLocaleString() : '0.00');
+                setSafeText('main-price', price ? price.toLocaleString() : '--');
                 
                 const changeEl = document.getElementById('main-change');
                 if (changeEl) {
@@ -346,7 +350,7 @@
                 setSafeText('ai-scenario-a', ai.scenario_a || ai.plan_a || '突破站穩 P 點追多');
                 setSafeText('ai-scenario-b', ai.scenario_b || ai.plan_b || '跌破 S1 關卡停損');
 
-                // --- 4. 籌碼與 VPVR 圖表（獨立容錯處理）---
+                // --- 4. 籌碼與 VPVR 圖表 ---
                 if (data.chips && typeof data.chips === 'object') {
                     renderChipsCharts(data.chips);
                 }
@@ -358,7 +362,7 @@
                 console.error("解析 JSON 時發生錯誤:", err);
                 const apiStatus = document.getElementById('api-status');
                 if (apiStatus) {
-                    apiStatus.innerText = '❌ data.json 解析失敗，請檢查格式';
+                    apiStatus.innerText = '❌ 讀取失敗，請確認 data.json 格式或 GitHub Pages 更新狀態';
                     apiStatus.style.color = 'var(--red-up)';
                 }
             }
