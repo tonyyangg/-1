@@ -22,7 +22,6 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
         body { background-color: var(--bg-dark); color: var(--text-main); padding: 16px; font-size: 14px; }
 
-        /* Header & Nav */
         .header-bar { display: flex; align-items: center; justify-content: space-between; padding-bottom: 12px; margin-bottom: 16px; border-bottom: 1px solid var(--card-border); }
         .logo-title { font-size: 1.25rem; font-weight: bold; display: flex; align-items: center; gap: 8px; }
         .logo-icon { width: 12px; height: 18px; background: var(--accent-blue); border-radius: 2px; }
@@ -35,7 +34,6 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        /* Grid Layouts */
         .dashboard-grid { display: grid; grid-template-columns: 280px 1fr; gap: 16px; }
         .card { background: var(--card-bg); border-radius: 10px; padding: 16px; border: 1px solid var(--card-border); margin-bottom: 16px; }
 
@@ -44,11 +42,12 @@
         .stat-value { font-size: 1.25rem; font-weight: bold; margin-top: 2px; }
         .badge { font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; font-weight: 600; display: inline-block; }
         .badge-green { background: rgba(16, 185, 129, 0.15); color: var(--green-down); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-red { background: rgba(239, 68, 68, 0.15); color: var(--red-up); border: 1px solid rgba(239, 68, 68, 0.3); }
         .badge-yellow { background: rgba(245, 158, 11, 0.15); color: var(--yellow-warn); border: 1px solid rgba(245, 158, 11, 0.3); }
         .badge-blue { background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border: 1px solid rgba(56, 189, 248, 0.3); }
 
         .progress-bar-bg { background: #1e293b; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 6px; }
-        .progress-bar-fill { background: var(--accent-blue); height: 100%; width: 68.5%; }
+        .progress-bar-fill { background: var(--accent-blue); height: 100%; width: 0%; transition: width 0.5s ease; }
 
         .alert-banner { background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; padding: 12px 16px; border-radius: 8px; font-size: 0.88rem; margin-bottom: 16px; }
 
@@ -69,13 +68,11 @@
         .chart-container { position: relative; width: 100%; height: 320px; }
         .two-col-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
-        /* AI 建議與劇本卡片樣式 */
         .ai-card { background: rgba(37, 99, 235, 0.05); border: 1px solid rgba(37, 99, 235, 0.2); border-radius: 8px; padding: 14px; margin-top: 16px; }
         .ai-title { font-weight: bold; color: var(--accent-cyan); display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
         .scenario-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
         .scenario-box { background: rgba(15, 23, 42, 0.6); padding: 10px; border-radius: 6px; border: 1px solid var(--card-border); font-size: 0.85rem; }
 
-        /* 教戰手冊專用樣式 */
         .guide-section { margin-bottom: 20px; }
         .guide-section h4 { color: var(--accent-cyan); margin-bottom: 8px; border-left: 3px solid var(--accent-blue); padding-left: 8px; }
         .guide-list { list-style: none; padding-left: 0; }
@@ -85,7 +82,6 @@
 </head>
 <body>
 
-    <!-- 頂部導覽列 -->
     <div class="header-bar">
         <div class="logo-title">
             <div class="logo-icon"></div>
@@ -103,7 +99,6 @@
     <!-- TAB 1: 大盤總覽與 AI 交易建議 -->
     <div id="tab-overview" class="tab-content active">
         <div class="dashboard-grid">
-            <!-- 左側欄 -->
             <div>
                 <div class="card">
                     <div class="card-header">
@@ -111,33 +106,31 @@
                     </div>
                     
                     <div class="stat-label">期現貨價差 (Basis)</div>
-                    <div class="stat-value" id="basis-val">+18.5 點 <span class="badge badge-green">正價差 (偏多)</span></div>
+                    <div class="stat-value" id="basis-val">-- <span class="badge badge-blue" id="basis-badge">載入中...</span></div>
 
                     <div class="stat-label" style="margin-top:14px;">大盤預估成交量</div>
-                    <div class="stat-value" id="volume-val">4,250 億 <span class="badge badge-yellow">出量突破預警</span></div>
+                    <div class="stat-value" id="volume-val">-- <span class="badge badge-yellow" id="volume-badge">--</span></div>
 
                     <div class="stat-label" style="margin-top:14px;">夜盤跳空缺口 (Night Gap)</div>
-                    <div class="stat-value" id="gap-val">+42.0 點 <span class="badge badge-blue">跳空高開</span></div>
+                    <div class="stat-value" id="gap-val">-- <span class="badge badge-blue" id="gap-badge">--</span></div>
 
                     <div class="stat-label" style="margin-top:14px;">電子類股成交比重</div>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px;">
-                        <span style="font-weight:bold;" id="elec-pct">68.5 %</span>
+                        <span style="font-weight:bold;" id="elec-pct">0.0 %</span>
                     </div>
                     <div class="progress-bar-bg">
-                        <div class="progress-bar-fill" id="elec-bar" style="width: 68.5%;"></div>
+                        <div class="progress-bar-fill" id="elec-bar"></div>
                     </div>
 
                     <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--card-border); font-size: 0.78rem; color: var(--text-sub); display: flex; justify-content: space-between;">
-                        <span>FinMind 數據源:</span>
-                        <span style="color: var(--green-down);">✓ API 連線成功 (FinMind)</span>
+                        <span>數據狀態:</span>
+                        <span style="color: var(--green-down);" id="api-status">連線檢測中...</span>
                     </div>
                 </div>
 
-                <!-- 手動 Pivot 計算器 -->
                 <div class="card">
                     <div class="card-header">
                         <span>⚡ 手動 / 夜盤 Pivot 計算器</span>
-                        <input type="checkbox" checked>
                     </div>
                     <div style="font-size: 0.75rem; color: var(--text-sub);">自訂夜盤高低收 (H/L/C) 試算最新關卡：</div>
                     
@@ -150,63 +143,59 @@
                 </div>
             </div>
 
-            <!-- 右側主圖表與 AI 交易建議區 -->
             <div>
-                <div class="alert-banner">
-                    ⚠️ <strong>大盤接近 Pivot 樞紐中心！</strong> 宜密切關注多空分水嶺攻防守勢，觀察量能決定卡位劇本。
+                <div class="alert-banner" id="ai-alert-banner">
+                    ⚠️ 數據更新中，請稍候...
                 </div>
 
                 <div class="card">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
                         <div>
                             <span style="font-size: 0.85rem; color: var(--text-sub);">TAIEX 加權指數</span>
-                            <span class="badge badge-blue" style="margin-left: 6px;">自動即時更新</span>
+                            <span class="badge badge-blue" style="margin-left: 6px;">實時連線</span>
                         </div>
                         <div style="font-size: 0.75rem; color: var(--text-sub);">
-                            資料日期: <span id="data-date">2026-10-01</span>
+                            更新時間: <span id="data-date">--</span>
                         </div>
                     </div>
 
                     <div class="main-price-row">
                         <div>
-                            <span class="price-large" id="main-price">48,353.49</span>
-                            <span class="price-change" id="main-change" style="color: var(--red-up);">+413.36 (+0.86%)</span>
+                            <span class="price-large" id="main-price">0.00</span>
+                            <span class="price-change" id="main-change">--</span>
                         </div>
                         <div class="ohlc-info">
-                            最高: <span id="val-high" style="color: var(--red-up);">48,353.49</span><br>
-                            最低: <span id="val-low" style="color: var(--green-down);">47,893.42</span><br>
-                            昨收: <span id="val-prev">47,940.13</span>
+                            最高: <span id="val-high">--</span><br>
+                            最低: <span id="val-low">--</span><br>
+                            昨收: <span id="val-prev">--</span>
                         </div>
                     </div>
 
-                    <!-- 5 關卡數字 -->
                     <div class="pivot-grid">
-                        <div class="pivot-box" style="border-color: rgba(16, 185, 129, 0.4);"><div class="pivot-title">第二支撐 (S2)</div><div class="pivot-val" id="val-s2" style="color:#10b981;">47,740.1</div></div>
-                        <div class="pivot-box" style="border-color: rgba(16, 185, 129, 0.7);"><div class="pivot-title">第一支撐 (S1)</div><div class="pivot-val" id="val-s1" style="color:#10b981;">48,046.8</div></div>
-                        <div class="pivot-box" style="border-color: var(--accent-blue); background: rgba(37, 99, 235, 0.1);"><div class="pivot-title">樞紐中心 (P)</div><div class="pivot-val" id="val-p" style="color:#38bdf8;">48,200.1</div></div>
-                        <div class="pivot-box" style="border-color: rgba(239, 68, 68, 0.7);"><div class="pivot-title">第一壓力 (R1)</div><div class="pivot-val" id="val-r1" style="color:#ef4444;">48,506.8</div></div>
-                        <div class="pivot-box" style="border-color: rgba(239, 68, 68, 0.4);"><div class="pivot-title">第二壓力 (R2)</div><div class="pivot-val" id="val-r2" style="color:#ef4444;">48,660.2</div></div>
+                        <div class="pivot-box" style="border-color: rgba(16, 185, 129, 0.4);"><div class="pivot-title">第二支撐 (S2)</div><div class="pivot-val" id="val-s2" style="color:#10b981;">--</div></div>
+                        <div class="pivot-box" style="border-color: rgba(16, 185, 129, 0.7);"><div class="pivot-title">第一支撐 (S1)</div><div class="pivot-val" id="val-s1" style="color:#10b981;">--</div></div>
+                        <div class="pivot-box" style="border-color: var(--accent-blue); background: rgba(37, 99, 235, 0.1);"><div class="pivot-title">樞紐中心 (P)</div><div class="pivot-val" id="val-p" style="color:#38bdf8;">--</div></div>
+                        <div class="pivot-box" style="border-color: rgba(239, 68, 68, 0.7);"><div class="pivot-title">第一壓力 (R1)</div><div class="pivot-val" id="val-r1" style="color:#ef4444;">--</div></div>
+                        <div class="pivot-box" style="border-color: rgba(239, 68, 68, 0.4);"><div class="pivot-title">第二壓力 (R2)</div><div class="pivot-val" id="val-r2" style="color:#ef4444;">--</div></div>
                     </div>
 
-                    <!-- 樞紐柱狀圖 -->
                     <div class="chart-container">
                         <canvas id="pivotBarChart"></canvas>
                     </div>
 
-                    <!-- 補回：AI 交易建議與多空卡位劇本卡片 -->
                     <div class="ai-card">
                         <div class="ai-title">🤖 AI 盤中交易策略建議</div>
-                        <p style="color: var(--text-sub); font-size: 0.88rem;">
-                            目前大盤運行於 <strong>樞紐點 (P) 48,200</strong> 與 <strong>第一壓力 (R1) 48,506</strong> 之間，且正價差擴大，預估量放大至 4,250 億，顯示短線多頭掌控主導權。
+                        <p style="color: var(--text-sub); font-size: 0.88rem;" id="ai-summary-text">
+                            正在分析最新數據...
                         </p>
                         <div class="scenario-grid">
                             <div class="scenario-box">
                                 <strong style="color: var(--red-up);">📈 劇本 A：多頭突破卡位</strong>
-                                <p style="color: var(--text-sub); margin-top: 4px;">早盤若站穩 R1 (48,506) 且電子成交比重維持 65% 以上，可順勢回測不破進場試多，目標看至 R2 (48,660)。</p>
+                                <p style="color: var(--text-sub); margin-top: 4px;" id="ai-scenario-a">--</p>
                             </div>
                             <div class="scenario-box">
                                 <strong style="color: var(--green-down);">📉 劇本 B：空頭假突破假拉回</strong>
-                                <p style="color: var(--text-sub); margin-top: 4px;">若開高走低跌破樞紐中心 P (48,200)，且預估量無法跟上，宜預防獲利了結賣壓，回測 S1 (48,046) 尋求支撐。</p>
+                                <p style="color: var(--text-sub); margin-top: 4px;" id="ai-scenario-b">--</p>
                             </div>
                         </div>
                     </div>
@@ -221,7 +210,7 @@
             <div class="card">
                 <div class="card-header">
                     <span>台指期三大法人未平倉口數 (TXF OI)</span>
-                    <span style="font-size:0.75rem; color:var(--green-down);">期交所最新連線</span>
+                    <span style="font-size:0.75rem; color:var(--green-down);">期交所連線</span>
                 </div>
                 <div class="chart-container">
                     <canvas id="oiChart"></canvas>
@@ -230,7 +219,7 @@
             <div class="card">
                 <div class="card-header">
                     <span>散戶小台指標 (MXF 散戶多空比 %)</span>
-                    <span style="font-size:0.75rem; color:var(--green-down);">期交所最新連線</span>
+                    <span style="font-size:0.75rem; color:var(--green-down);">期交所連線</span>
                 </div>
                 <div class="chart-container">
                     <canvas id="retailChart"></canvas>
@@ -257,12 +246,12 @@
         <div class="card" style="padding: 20px;">
             <h3>🌐 國際總經實時走勢 (TradingView)</h3>
             <div style="height: 500px; margin-top: 15px; background: #0f172a; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-sub);">
-                [TradingView 實時 Widget 嵌入區：包含美股電子盤 NQ、道瓊、VIX 與台積電 ADR]
+                [TradingView 實時 Widget 載入區]
             </div>
         </div>
     </div>
 
-    <!-- TAB 5: 完整開盤策略與當衝教戰手冊 (保證不偷刪) -->
+    <!-- TAB 5: 開盤策略與當衝教戰手冊 -->
     <div id="tab-strategy" class="tab-content">
         <div class="card" style="padding: 24px;">
             <h2 style="margin-bottom: 16px; color: var(--text-main); border-bottom: 1px solid var(--card-border); padding-bottom: 10px;">
@@ -285,7 +274,7 @@
                         <br>觀察電子類股成交比重是否達 65% 以上。若電子權值吸金且大盤預估量突破 4,000 億，為典型攻擊量，可找回測支撐點進場試多。
                     </li>
                     <li><strong>第二步：VPVR 籌碼真空區運用</strong>
-                        <br>當價格突破 23,000 (POC) 等成交密集區後，上方若為「量價真空帶」，價格往往會加速推升；反之，進入密集區容易形成卡盤震盪。
+                        <br>當價格突破 POC 等成交密集區後，上方若為「量價真空帶」，價格往往會加速推升；反之，進入密集區容易形成卡盤震盪。
                     </li>
                     <li><strong>第三步：極限風控與停損停利</strong>
                         <br>當衝單筆停損嚴格控制在 25-35 點內。達到 R1 或 S1 關卡時，建議先平倉 50% 鎖住獲利，剩餘部位移動停利。
@@ -303,31 +292,10 @@
         </div>
     </div>
 
-    <!-- 前端核心 JavaScript (附帶 Fallback 防黑屏機制) -->
+    <!-- JS 動態讀取與渲染邏輯 -->
     <script>
-        // 預設視覺資料 (避免 data.json 未生成時畫面漆黑)
-        const defaultData = {
-            taiex: {
-                price: 48353.49, change: 413.36, change_pct: 0.86,
-                high: 48353.49, low: 47893.42, close_prev: 47940.13,
-                date: '2026-10-01',
-                pivot: { p: 48200.1, s1: 48046.8, s2: 47740.1, r1: 48506.8, r2: 48660.2 }
-            },
-            chips: {
-                dates: ['5天前', '4天前', '3天前', '2天前', '昨日'],
-                foreign_oi: [-31000, -28000, -30000, -27000, -25000],
-                investment_trust_oi: [11500, 12800, 13000, 12500, 13200],
-                retail_ratio: [8.2, 5.1, 11.5, 3.8, -2.5]
-            },
-            vpvr: {
-                prices: ["23,200", "23,100", "23,000 (POC)", "22,900", "22,800", "22,700", "22,600"],
-                volumes: [12500, 24800, 68000, 44800, 31000, 18000, 9500]
-            }
-        };
-
         let pivotChartObj, oiChartObj, retailChartObj, vpvrChartObj;
 
-        // 分頁切換邏輯
         function switchTab(tabId, btnEl) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
@@ -336,59 +304,78 @@
             document.getElementById(`tab-${tabId}`).classList.add('active');
         }
 
-        // 資料讀取與渲染
         async function initDashboard() {
-            let data = defaultData;
-
             try {
-                const response = await fetch('./data.json?t=' + new Date().getTime());
-                if (response.ok) {
-                    const fetchedData = await response.json();
-                    if (fetchedData && fetchedData.taiex) {
-                        data = fetchedData; // 成功讀取最新資料
-                    }
+                // 強制讀取動態 data.json，並加上時間戳防快取
+                const response = await fetch('./data.json?timestamp=' + new Date().getTime());
+                if (!response.ok) throw new Error('無法取得 data.json');
+                
+                const data = await response.json();
+                document.getElementById('api-status').innerText = '✓ 數據即時更新成功';
+
+                // 1. 渲染即時指標
+                if (data.realtime) {
+                    const r = data.realtime;
+                    document.getElementById('basis-val').innerText = `${r.basis > 0 ? '+' : ''}${r.basis} 點`;
+                    document.getElementById('basis-badge').innerText = r.basis > 0 ? '正價差 (偏多)' : '逆價差 (偏空)';
+                    document.getElementById('basis-badge').className = `badge ${r.basis > 0 ? 'badge-green' : 'badge-red'}`;
+
+                    document.getElementById('volume-val').innerText = `${r.estimated_volume} 億`;
+                    document.getElementById('volume-badge').innerText = r.estimated_volume > 3800 ? '出量攻擊' : '縮量觀望';
+
+                    document.getElementById('gap-val').innerText = `${r.night_gap > 0 ? '+' : ''}${r.night_gap} 點`;
+                    document.getElementById('gap-badge').innerText = r.night_gap > 0 ? '跳空高開' : '跳空低開';
+
+                    document.getElementById('elec-pct').innerText = `${r.elec_share}%`;
+                    document.getElementById('elec-bar').style.width = `${r.elec_share}%`;
                 }
-            } catch (err) {
-                console.log("使用預設展示資料繪製畫面");
-            }
 
-            // 安全更新 DOM 文字
-            try {
+                // 2. 渲染大盤與 Pivot 關卡
                 if (data.taiex) {
-                    document.getElementById('data-date').innerText = data.taiex.date || '2026-10-01';
-                    document.getElementById('main-price').innerText = Number(data.taiex.price).toLocaleString();
+                    const t = data.taiex;
+                    document.getElementById('data-date').innerText = t.date || '--';
+                    document.getElementById('main-price').innerText = Number(t.price).toLocaleString();
                     
                     const changeEl = document.getElementById('main-change');
-                    const sign = data.taiex.change >= 0 ? '+' : '';
-                    changeEl.innerText = `${sign}${data.taiex.change} (${sign}${data.taiex.change_pct}%)`;
-                    changeEl.style.color = data.taiex.change >= 0 ? 'var(--red-up)' : 'var(--green-down)';
+                    const sign = t.change >= 0 ? '+' : '';
+                    changeEl.innerText = `${sign}${t.change} (${sign}${t.change_pct}%)`;
+                    changeEl.style.color = t.change >= 0 ? 'var(--red-up)' : 'var(--green-down)';
 
-                    document.getElementById('val-high').innerText = Number(data.taiex.high).toLocaleString();
-                    document.getElementById('val-low').innerText = Number(data.taiex.low).toLocaleString();
-                    document.getElementById('val-prev').innerText = Number(data.taiex.close_prev).toLocaleString();
+                    document.getElementById('val-high').innerText = Number(t.high).toLocaleString();
+                    document.getElementById('val-low').innerText = Number(t.low).toLocaleString();
+                    document.getElementById('val-prev').innerText = Number(t.close_prev).toLocaleString();
 
-                    const p = data.taiex.pivot || defaultData.taiex.pivot;
-                    document.getElementById('val-s2').innerText = p.s2.toLocaleString();
-                    document.getElementById('val-s1').innerText = p.s1.toLocaleString();
-                    document.getElementById('val-p').innerText = p.p.toLocaleString();
-                    document.getElementById('val-r1').innerText = p.r1.toLocaleString();
-                    document.getElementById('val-r2').innerText = p.r2.toLocaleString();
-
-                    renderPivotChart(p, data.taiex.price);
+                    if (t.pivot) {
+                        document.getElementById('val-s2').innerText = t.pivot.s2.toLocaleString();
+                        document.getElementById('val-s1').innerText = t.pivot.s1.toLocaleString();
+                        document.getElementById('val-p').innerText = t.pivot.p.toLocaleString();
+                        document.getElementById('val-r1').innerText = t.pivot.r1.toLocaleString();
+                        document.getElementById('val-r2').innerText = t.pivot.r2.toLocaleString();
+                        renderPivotChart(t.pivot, t.price);
+                    }
                 }
 
+                // 3. 渲染 AI 建議內容
+                if (data.ai_analysis) {
+                    const ai = data.ai_analysis;
+                    document.getElementById('ai-alert-banner').innerHTML = `⚠️ <strong>AI 當前盤勢提醒：</strong> ${ai.alert_banner}`;
+                    document.getElementById('ai-summary-text').innerHTML = ai.summary;
+                    document.getElementById('ai-scenario-a').innerText = ai.scenario_a;
+                    document.getElementById('ai-scenario-b').innerText = ai.scenario_b;
+                }
+
+                // 4. 渲染籌碼與 VPVR 圖表
                 if (data.chips) renderChipsCharts(data.chips);
                 if (data.vpvr) renderVPVRChart(data.vpvr);
 
-            } catch (e) {
-                console.error("DOM 渲染錯誤，啟動預備邏輯:", e);
-                renderPivotChart(defaultData.taiex.pivot, defaultData.taiex.price);
-                renderChipsCharts(defaultData.chips);
-                renderVPVRChart(defaultData.vpvr);
+            } catch (err) {
+                console.error("載入 data.json 失敗:", err);
+                document.getElementById('api-status').innerText = '❌ data.json 載入失敗，請確認抓取腳本';
+                document.getElementById('api-status').style.color = 'var(--red-up)';
             }
         }
 
-        // 1. Pivot 柱狀圖
+        // Pivot 柱狀圖渲染
         function renderPivotChart(p, currentPrice) {
             const ctx = document.getElementById('pivotBarChart').getContext('2d');
             if (pivotChartObj) pivotChartObj.destroy();
@@ -408,24 +395,24 @@
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
-                        y: { min: Math.floor(p.s2 * 0.995), grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
+                        y: { min: Math.floor(p.s2 * 0.99), grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
                         x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
                     }
                 }
             });
         }
 
-        // 2. 籌碼雙圖表
+        // 籌碼雙圖表渲染
         function renderChipsCharts(chips) {
             const ctx1 = document.getElementById('oiChart').getContext('2d');
             if (oiChartObj) oiChartObj.destroy();
             oiChartObj = new Chart(ctx1, {
                 type: 'bar',
                 data: {
-                    labels: chips.dates || defaultData.chips.dates,
+                    labels: chips.dates,
                     datasets: [
-                        { label: '外資未平倉 (口)', data: chips.foreign_oi || defaultData.chips.foreign_oi, backgroundColor: '#ef4444' },
-                        { label: '投信未平倉 (口)', data: chips.investment_trust_oi || defaultData.chips.investment_trust_oi, backgroundColor: '#2563eb' }
+                        { label: '外資未平倉 (口)', data: chips.foreign_oi, backgroundColor: '#ef4444' },
+                        { label: '投信未平倉 (口)', data: chips.investment_trust_oi, backgroundColor: '#2563eb' }
                     ]
                 },
                 options: {
@@ -440,10 +427,10 @@
             retailChartObj = new Chart(ctx2, {
                 type: 'line',
                 data: {
-                    labels: chips.dates || defaultData.chips.dates,
+                    labels: chips.dates,
                     datasets: [{
                         label: '散戶多空比 (%)',
-                        data: chips.retail_ratio || defaultData.chips.retail_ratio,
+                        data: chips.retail_ratio,
                         borderColor: '#f59e0b',
                         backgroundColor: 'rgba(245, 158, 11, 0.15)',
                         fill: true, tension: 0.4
@@ -457,20 +444,18 @@
             });
         }
 
-        // 3. VPVR 圖表
+        // VPVR 圖表渲染
         function renderVPVRChart(vpvr) {
             const ctx = document.getElementById('vpvrChart').getContext('2d');
             if (vpvrChartObj) vpvrChartObj.destroy();
 
-            const prices = vpvr.prices || defaultData.vpvr.prices;
-            const volumes = vpvr.volumes || defaultData.vpvr.volumes;
-            const bgColors = prices.map(p => String(p).includes('POC') ? '#ef4444' : '#2563eb');
+            const bgColors = vpvr.prices.map(p => String(p).includes('POC') ? '#ef4444' : '#2563eb');
 
             vpvrChartObj = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: prices,
-                    datasets: [{ label: '近 30 日成交量累積', data: volumes, backgroundColor: bgColors, borderRadius: 4 }]
+                    labels: vpvr.prices,
+                    datasets: [{ label: '近 30 日成交量累積', data: vpvr.volumes, backgroundColor: bgColors, borderRadius: 4 }]
                 },
                 options: {
                     indexAxis: 'y', responsive: true, maintainAspectRatio: false,
@@ -506,7 +491,6 @@
             renderPivotChart({ p, r1, r2, s1, s2 }, c);
         }
 
-        // 頁面初次載入
         window.onload = initDashboard;
     </script>
 </body>
