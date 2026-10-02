@@ -265,7 +265,7 @@
             try {
                 // 使用快取破壞參數 (Cache Buster)，強迫 GitHub Pages 讀取最新的 data.json
                 const cacheBuster = `?v=${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-                const response = await fetch('./data.json' + cacheBuster, {
+                const response = await fetch('/-1/data.json?v=' + Date.now() {
                     headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
                 });
                 
