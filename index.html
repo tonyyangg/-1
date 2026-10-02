@@ -225,7 +225,7 @@
                         <div class="bg-gray-900 p-3 rounded border border-gray-750">
                             <h4 class="font-semibold text-emerald-400 mb-1">1. 多頭進場條件 (Long Setup)</h4>
                             <p class="text-xs leading-relaxed text-gray-400">
-                                價格回測 VWAP 不破 + 三大法人單日淨多單增加 > 2000 口 + 散戶小台多空比 &lt; -10% (散戶做空)。
+                                價格回測 VWAP 不破 + 三大法人單日淨多單增加 > 2000 口 + 散戶小台多空比 < -10% (散戶做空)。
                             </p>
                         </div>
                         <div class="bg-gray-900 p-3 rounded border border-gray-750">
@@ -278,7 +278,7 @@ ROC_Val = RateOfChange(Close, ROCLen);
 // 進場邏輯
 If MarketPosition = 0 then Begin
     If Close > VWAP_Val and ROC_Val > 0.5 then 
-        Buy ("EL_Long") next bar at market; 
+        Buy ("EL_Long") next bar at market;
         
     If Close < VWAP_Val and ROC_Val < -0.5 then 
         SellShort ("EL_Short") next bar at market;
@@ -322,9 +322,7 @@ SetProfitTarget(TakeProfitPts * BigPointValue);
             const targetContent = document.getElementById(tabId);
             if(targetContent) targetContent.classList.remove('hidden');
 
-            if (event && event.currentTarget) {
-                event.currentTarget.classList.add('active');
-            }
+            event.currentTarget.classList.add('active');
 
             // Render charts on demand if tab is visible
             if (tabId === 'tab-chips') {
@@ -353,18 +351,14 @@ SetProfitTarget(TakeProfitPts * BigPointValue);
             }
         }
 
-        // Fetch Market Data (API Integration)
+        // Fetch Market Data (API Simulation with FinMind Integration Fallback)
         async function fetchMarketData() {
             const refreshIcon = document.getElementById('refresh-icon');
-            if (refreshIcon) refreshIcon.classList.add('animate-spin');
+            refreshIcon.classList.add('animate-spin');
 
             try {
-                // 動態取得近一週日期，確保 FinMind API 永遠能抓到最新的交易日數據
-                const today = new Date();
-                const pastDate = new Date(today.getTime() - (7 * 24 * 60 * 60 * 1000));
-                const startDateStr = pastDate.toISOString().split('T')[0];
-
-                const response = await fetch(`https://api.finmindtrade.com/api/v4/data?dataset=TaiwanFuturesInstitutionalFutures&data_id=TX&start_date=${startDateStr}`);
+                // Fetch institutional futures data from FinMind or Mock API
+                const response = await fetch('https://api.finmindtrade.com/api/v4/data?dataset=TaiwanFuturesInstitutionalFutures&data_id=TX&start_date=2026-09-01');
                 const result = await response.json();
 
                 if (result.data && result.data.length > 0) {
@@ -378,9 +372,9 @@ SetProfitTarget(TakeProfitPts * BigPointValue);
                 updateMetrics(-12450);
             } finally {
                 setTimeout(() => {
-                    if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+                    refreshIcon.classList.remove('animate-spin');
                     const now = new Date();
-                    document.getElementById('last-updated').innerText = `更新於: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+                    document.getElementById('last-updated').innerText = `更新於: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
                 }, 500);
             }
         }
