@@ -2,9 +2,12 @@ name: Update Market Data
 
 on:
   schedule:
-    # 每天定時執行 (可自行調整 CRON 時間)
     - cron: '0 6,10 * * 1-5'
-  workflow_dispatch: # 支援手動點擊執行
+  workflow_dispatch:
+
+# 授權 GitHub Actions 寫入權限
+permissions:
+  contents: write
 
 jobs:
   update-data:
@@ -24,20 +27,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests beautifulsoup4 pandas
 
-      # 增加 ls 檢查，確保工作目錄有該檔案
-      - name: Check files
-        run: |
-          pwd
-          ls -la
-
-      # 執行抓取腳本 (請確認檔名是否與專案內的檔案一致)
       - name: Run Data Crawler
         run: |
           python fetch_data.py
 
       - name: Commit and Push if changed
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
           git add data.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "auto: update market data [skip ci]" && git push)
+          if ! git diff --staged --quiet; then
+            git commit -m "auto: update market data [skip ci]"
+            git push
+          else
+            echo "No changes in data.json, skipping commit."
+          fi
