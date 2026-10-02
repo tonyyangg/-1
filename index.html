@@ -73,12 +73,6 @@
         .ai-title { font-weight: bold; color: var(--accent-cyan); display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
         .scenario-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
         .scenario-box { background: rgba(15, 23, 42, 0.6); padding: 10px; border-radius: 6px; border: 1px solid var(--card-border); font-size: 0.85rem; }
-
-        .guide-section { margin-bottom: 20px; }
-        .guide-section h4 { color: var(--accent-cyan); margin-bottom: 8px; border-left: 3px solid var(--accent-blue); padding-left: 8px; }
-        .guide-list { list-style: none; padding-left: 0; }
-        .guide-list li { margin-bottom: 8px; color: #cbd5e1; line-height: 1.6; }
-        .guide-list li strong { color: var(--text-main); }
     </style>
 </head>
 <body>
@@ -211,7 +205,6 @@
             <div class="card">
                 <div class="card-header">
                     <span>台指期三大法人未平倉口數 (TXF OI)</span>
-                    <span style="font-size:0.75rem; color:var(--green-down);">期交所連線</span>
                 </div>
                 <div class="chart-container">
                     <canvas id="oiChart"></canvas>
@@ -220,7 +213,6 @@
             <div class="card">
                 <div class="card-header">
                     <span>散戶小台指標 (MXF 散戶多空比 %)</span>
-                    <span style="font-size:0.75rem; color:var(--green-down);">期交所連線</span>
                 </div>
                 <div class="chart-container">
                     <canvas id="retailChart"></canvas>
@@ -234,7 +226,6 @@
         <div class="card">
             <div class="card-header">
                 <span>近 30 日成交量累積分佈圖 (VPVR - Volume Profile)</span>
-                <span style="font-size:0.75rem; color:var(--text-sub);">尋找主要成交密集區 (POC) 與籌碼真空帶</span>
             </div>
             <div class="chart-container" style="height: 420px;">
                 <canvas id="vpvrChart"></canvas>
@@ -255,16 +246,8 @@
     <!-- TAB 5: 開盤策略 -->
     <div id="tab-strategy" class="tab-content">
         <div class="card" style="padding: 24px;">
-            <h2 style="margin-bottom: 16px; color: var(--text-main); border-bottom: 1px solid var(--card-border); padding-bottom: 10px;">
-                🎯 開盤策略與台指期當衝教戰手冊
-            </h2>
-            <div class="guide-section">
-                <h4>一、 晨間準備與開盤定調 (08:30 - 08:45)</h4>
-                <ul class="guide-list">
-                    <li><strong>1. 夜盤缺口確認 (Night Gap)：</strong> 檢查夜盤收盤與美股漲跌，確定今日開盤是「跳空高開」或「跳空低開」。</li>
-                    <li><strong>2. 樞紐點 (Pivot Points) 關卡定位：</strong> 確認今日 P、S1、S2、R1、R2 位置。</li>
-                </ul>
-            </div>
+            <h2 style="margin-bottom: 16px;">🎯 開盤策略與台指期當衝教戰手冊</h2>
+            <p>1. 確認 night gap 缺口與 P 點支撐。<br>2. 留意開盤前 15 分鐘電子股成交比重與預估量變化。</p>
         </div>
     </div>
 
@@ -284,50 +267,52 @@
                 if (!response.ok) throw new Error('無法取得 data.json');
                 
                 const data = await response.json();
-                console.log("已讀取到 data.json:", data); // 方便在開發者工具(F12)除錯
+                console.log("成功取得 JSON 資料:", data);
+                
                 document.getElementById('api-status').innerText = '✓ 數據即時更新成功';
+                document.getElementById('api-status').style.color = 'var(--green-down)';
 
-                // 1. 相容性讀取即時指標 (支援多種欄位命名方式)
-                const real = data.realtime || data.indicators || data;
-                const basis = real.basis ?? real.price_basis ?? 0;
-                const vol = real.estimated_volume ?? real.volume ?? 0;
-                const gap = real.night_gap ?? real.gap ?? 0;
-                const elec = real.elec_share ?? real.elec_pct ?? 0;
+                // --- 1. 即時指標 (安全讀取) ---
+                const real = data.realtime || data.indicators || data || {};
+                const basis = Number(real.basis ?? real.price_basis ?? 0);
+                const vol = Number(real.estimated_volume ?? real.volume ?? 0);
+                const gap = Number(real.night_gap ?? real.gap ?? 0);
+                const elec = Number(real.elec_share ?? real.elec_pct ?? 0);
 
-                document.getElementById('basis-val').innerText = `${basis > 0 ? '+' : ''}${basis} 點`;
-                document.getElementById('basis-badge').innerText = basis > 0 ? '正價差' : '逆價差';
-                document.getElementById('basis-badge').className = `badge ${basis > 0 ? 'badge-green' : 'badge-red'}`;
+                document.getElementById('basis-val').innerText = `${basis >= 0 ? '+' : ''}${basis} 點`;
+                document.getElementById('basis-badge').innerText = basis >= 0 ? '正價差' : '逆價差';
+                document.getElementById('basis-badge').className = `badge ${basis >= 0 ? 'badge-green' : 'badge-red'}`;
 
-                document.getElementById('volume-val').innerText = `${vol} 億`;
-                document.getElementById('volume-badge').innerText = vol > 3800 ? '爆量' : '縮量';
+                document.getElementById('volume-val').innerText = vol ? `${vol} 億` : '--';
+                if (vol) document.getElementById('volume-badge').innerText = vol > 3800 ? '爆量' : '縮量';
 
-                document.getElementById('gap-val').innerText = `${gap > 0 ? '+' : ''}${gap} 點`;
-                document.getElementById('gap-badge').innerText = gap > 0 ? '高開' : '低開';
+                document.getElementById('gap-val').innerText = `${gap >= 0 ? '+' : ''}${gap} 點`;
+                document.getElementById('gap-badge').innerText = gap >= 0 ? '高開' : '低開';
 
                 document.getElementById('elec-pct').innerText = `${elec}%`;
                 document.getElementById('elec-bar').style.width = `${Math.min(elec, 100)}%`;
 
-                // 2. 相容性讀取大盤與 Pivot 關卡
-                const t = data.taiex || data.index || data;
-                const price = t.price ?? t.close ?? t.current_price ?? 0;
-                const change = t.change ?? 0;
-                const changePct = t.change_pct ?? t.change_percent ?? 0;
+                // --- 2. 大盤與 Pivot 關卡 (安全讀取) ---
+                const t = data.taiex || data.index || data || {};
+                const price = Number(t.price ?? t.close ?? t.current_price ?? 0);
+                const change = Number(t.change ?? 0);
+                const changePct = Number(t.change_pct ?? t.change_percent ?? 0);
 
-                document.getElementById('data-date').innerText = t.date || new Date().toLocaleDateString();
-                document.getElementById('main-price').innerText = Number(price).toLocaleString();
+                document.getElementById('data-date').innerText = t.date || new Date().toLocaleTimeString();
+                document.getElementById('main-price').innerText = price ? price.toLocaleString() : '0.00';
                 
                 const changeEl = document.getElementById('main-change');
                 const sign = change >= 0 ? '+' : '';
                 changeEl.innerText = `${sign}${change} (${sign}${changePct}%)`;
                 changeEl.style.color = change >= 0 ? 'var(--red-up)' : 'var(--green-down)';
 
-                document.getElementById('val-high').innerText = Number(t.high ?? 0).toLocaleString();
-                document.getElementById('val-low').innerText = Number(t.low ?? 0).toLocaleString();
-                document.getElementById('val-prev').innerText = Number(t.close_prev ?? t.yesterday_close ?? 0).toLocaleString();
+                document.getElementById('val-high').innerText = t.high ? Number(t.high).toLocaleString() : '--';
+                document.getElementById('val-low').innerText = t.low ? Number(t.low).toLocaleString() : '--';
+                document.getElementById('val-prev').innerText = t.close_prev ? Number(t.close_prev).toLocaleString() : '--';
 
-                // 讀取 Pivot
+                // Pivot 安全提取
                 const p = t.pivot || data.pivot || {};
-                const s2 = p.s2 ?? 0, s1 = p.s1 ?? 0, pivotP = p.p ?? 0, r1 = p.r1 ?? 0, r2 = p.r2 ?? 0;
+                const s2 = Number(p.s2 ?? 0), s1 = Number(p.s1 ?? 0), pivotP = Number(p.p ?? 0), r1 = Number(p.r1 ?? 0), r2 = Number(p.r2 ?? 0);
 
                 document.getElementById('val-s2').innerText = s2 ? s2.toLocaleString() : '--';
                 document.getElementById('val-s1').innerText = s1 ? s1.toLocaleString() : '--';
@@ -339,26 +324,31 @@
                     renderPivotChart({ s2, s1, p: pivotP, r1, r2 }, price);
                 }
 
-                // 3. 相容性讀取 AI 建議
+                // --- 3. AI 策略分析 (安全讀取) ---
                 const ai = data.ai_analysis || data.ai || {};
                 document.getElementById('ai-alert-banner').innerHTML = `⚠️ <strong>AI 盤勢提醒：</strong> ${ai.alert_banner || ai.alert || '今日盤勢區間震盪，請注意風控'}`;
-                document.getElementById('ai-summary-text').innerHTML = ai.summary || ai.description || '目前盤勢尚待確認觀望。';
+                document.getElementById('ai-summary-text').innerHTML = ai.summary || ai.description || '目前數據分析完成。';
                 document.getElementById('ai-scenario-a').innerText = ai.scenario_a || ai.plan_a || '突破站穩 P 點追多';
                 document.getElementById('ai-scenario-b').innerText = ai.scenario_b || ai.plan_b || '跌破 S1 關卡停損';
 
-                // 4. 圖表繪製
-                if (data.chips) renderChipsCharts(data.chips);
-                if (data.vpvr) renderVPVRChart(data.vpvr);
+                // --- 4. 籌碼與 VPVR 圖表 (安全防護) ---
+                if (data.chips && typeof data.chips === 'object') {
+                    renderChipsCharts(data.chips);
+                }
+                if (data.vpvr && typeof data.vpvr === 'object') {
+                    renderVPVRChart(data.vpvr);
+                }
 
             } catch (err) {
-                console.error("載入失敗:", err);
+                console.error("解析 JSON 或渲染時發生錯誤:", err);
                 document.getElementById('api-status').innerText = '❌ data.json 解析失敗，請檢查格式';
                 document.getElementById('api-status').style.color = 'var(--red-up)';
             }
         }
 
         function renderPivotChart(p, currentPrice) {
-            const ctx = document.getElementById('pivotBarChart').getContext('2d');
+            const ctx = document.getElementById('pivotBarChart')?.getContext('2d');
+            if (!ctx) return;
             if (pivotChartObj) pivotChartObj.destroy();
 
             pivotChartObj = new Chart(ctx, {
@@ -383,51 +373,61 @@
         }
 
         function renderChipsCharts(chips) {
-            const ctx1 = document.getElementById('oiChart').getContext('2d');
-            if (oiChartObj) oiChartObj.destroy();
-            oiChartObj = new Chart(ctx1, {
-                type: 'bar',
-                data: {
-                    labels: chips.dates || [],
-                    datasets: [
-                        { label: '外資未平倉 (口)', data: chips.foreign_oi || [], backgroundColor: '#ef4444' },
-                        { label: '投信未平倉 (口)', data: chips.investment_trust_oi || [], backgroundColor: '#2563eb' }
-                    ]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#94a3b8' } } },
-                    scales: { y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }, x: { grid: { display: false }, ticks: { color: '#94a3b8' } } }
-                }
-            });
+            const dates = chips.dates || [];
+            if (!dates.length) return;
 
-            const ctx2 = document.getElementById('retailChart').getContext('2d');
-            if (retailChartObj) retailChartObj.destroy();
-            retailChartObj = new Chart(ctx2, {
-                type: 'line',
-                data: {
-                    labels: chips.dates || [],
-                    datasets: [{
-                        label: '散戶多空比 (%)',
-                        data: chips.retail_ratio || [],
-                        borderColor: '#f59e0b',
-                        backgroundColor: 'rgba(245, 158, 11, 0.15)',
-                        fill: true, tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#94a3b8' } } },
-                    scales: { y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }, x: { grid: { display: false }, ticks: { color: '#94a3b8' } } }
-                }
-            });
+            const ctx1 = document.getElementById('oiChart')?.getContext('2d');
+            if (ctx1) {
+                if (oiChartObj) oiChartObj.destroy();
+                oiChartObj = new Chart(ctx1, {
+                    type: 'bar',
+                    data: {
+                        labels: dates,
+                        datasets: [
+                            { label: '外資未平倉 (口)', data: chips.foreign_oi || [], backgroundColor: '#ef4444' },
+                            { label: '投信未平倉 (口)', data: chips.investment_trust_oi || [], backgroundColor: '#2563eb' }
+                        ]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { labels: { color: '#94a3b8' } } },
+                        scales: { y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }, x: { grid: { display: false }, ticks: { color: '#94a3b8' } } }
+                    }
+                });
+            }
+
+            const ctx2 = document.getElementById('retailChart')?.getContext('2d');
+            if (ctx2) {
+                if (retailChartObj) retailChartObj.destroy();
+                retailChartObj = new Chart(ctx2, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: '散戶多空比 (%)',
+                            data: chips.retail_ratio || [],
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                            fill: true, tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { labels: { color: '#94a3b8' } } },
+                        scales: { y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }, x: { grid: { display: false }, ticks: { color: '#94a3b8' } } }
+                    }
+                });
+            }
         }
 
         function renderVPVRChart(vpvr) {
-            const ctx = document.getElementById('vpvrChart').getContext('2d');
+            const ctx = document.getElementById('vpvrChart')?.getContext('2d');
+            if (!ctx) return;
             if (vpvrChartObj) vpvrChartObj.destroy();
 
             const prices = vpvr.prices || [];
+            if (!prices.length) return;
+
             const bgColors = prices.map(p => String(p).includes('POC') ? '#ef4444' : '#2563eb');
 
             vpvrChartObj = new Chart(ctx, {
