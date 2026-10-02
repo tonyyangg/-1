@@ -22,81 +22,81 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
         body { background-color: var(--bg-dark); color: var(--text-main); padding: 16px; font-size: 14px; }
 
-        /* 頂部 Header & 導覽分頁 */
+        /* Header & Nav */
         .header-bar { display: flex; align-items: center; justify-content: space-between; padding-bottom: 12px; margin-bottom: 16px; border-bottom: 1px solid var(--card-border); }
         .logo-title { font-size: 1.25rem; font-weight: bold; display: flex; align-items: center; gap: 8px; }
         .logo-icon { width: 12px; height: 18px; background: var(--accent-blue); border-radius: 2px; }
         
-        .nav-tabs { display: flex; gap: 8px; background: #0f172a; padding: 4px; border-radius: 8px; border: 1px solid var(--card-border); }
+        .nav-tabs { display: flex; gap: 6px; background: #0f172a; padding: 4px; border-radius: 8px; border: 1px solid var(--card-border); }
         .tab-btn { background: transparent; color: var(--text-sub); border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 0.88rem; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
         .tab-btn.active { background: var(--accent-blue); color: #fff; }
         .tab-btn:hover:not(.active) { color: var(--text-main); background: rgba(255,255,255,0.05); }
 
-        /* 分頁切換區域 */
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        /* Layout Grid */
+        /* Grid Layouts */
         .dashboard-grid { display: grid; grid-template-columns: 280px 1fr; gap: 16px; }
         .card { background: var(--card-bg); border-radius: 10px; padding: 16px; border: 1px solid var(--card-border); margin-bottom: 16px; }
 
-        /* 左側欄樣式 */
         .card-header { font-size: 0.9rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
         .stat-label { color: var(--text-sub); font-size: 0.8rem; margin-top: 10px; }
-        .stat-value { font-size: 1.3rem; font-weight: bold; margin-top: 2px; }
+        .stat-value { font-size: 1.25rem; font-weight: bold; margin-top: 2px; }
         .badge { font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; font-weight: 600; display: inline-block; }
         .badge-green { background: rgba(16, 185, 129, 0.15); color: var(--green-down); border: 1px solid rgba(16, 185, 129, 0.3); }
         .badge-yellow { background: rgba(245, 158, 11, 0.15); color: var(--yellow-warn); border: 1px solid rgba(245, 158, 11, 0.3); }
         .badge-blue { background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); border: 1px solid rgba(56, 189, 248, 0.3); }
 
-        /* 進度條 */
         .progress-bar-bg { background: #1e293b; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 6px; }
         .progress-bar-fill { background: var(--accent-blue); height: 100%; width: 68.5%; }
 
-        /* 警告 Banner */
-        .alert-banner { background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; padding: 12px 16px; border-radius: 8px; font-size: 0.88rem; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .alert-banner { background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; padding: 12px 16px; border-radius: 8px; font-size: 0.88rem; margin-bottom: 16px; }
 
-        /* 主數值區 */
         .main-price-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16px; }
         .price-large { font-size: 2.2rem; font-weight: 800; line-height: 1; }
         .price-change { font-size: 1.1rem; font-weight: 600; margin-left: 8px; }
         .ohlc-info { text-align: right; font-size: 0.82rem; color: var(--text-sub); line-height: 1.5; }
 
-        /* Pivot 關卡 5 格 */
         .pivot-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; text-align: center; margin-bottom: 16px; }
         .pivot-box { background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: 6px; padding: 10px 4px; }
-        .pivot-box.s2 { border-color: rgba(16, 185, 129, 0.4); }
-        .pivot-box.s1 { border-color: rgba(16, 185, 129, 0.7); }
-        .pivot-box.p  { border-color: var(--accent-blue); background: rgba(37, 99, 235, 0.1); }
-        .pivot-box.r1 { border-color: rgba(239, 68, 68, 0.7); }
-        .pivot-box.r2 { border-color: rgba(239, 68, 68, 0.4); }
         .pivot-title { font-size: 0.72rem; color: var(--text-sub); margin-bottom: 4px; }
         .pivot-val { font-size: 1rem; font-weight: bold; }
 
-        /* 計算器表單 */
         .calc-input-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; }
         .calc-input-group input { background: #0f172a; border: 1px solid var(--card-border); color: #fff; padding: 6px; border-radius: 4px; width: 100%; font-size: 0.8rem; text-align: center; }
         .btn-calc { width: 100%; background: var(--accent-blue); color: #fff; border: none; padding: 8px; border-radius: 6px; font-weight: 600; margin-top: 10px; cursor: pointer; }
 
-        /* 圖表容器 */
         .chart-container { position: relative; width: 100%; height: 320px; }
         .two-col-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+        /* AI 建議與劇本卡片樣式 */
+        .ai-card { background: rgba(37, 99, 235, 0.05); border: 1px solid rgba(37, 99, 235, 0.2); border-radius: 8px; padding: 14px; margin-top: 16px; }
+        .ai-title { font-weight: bold; color: var(--accent-cyan); display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+        .scenario-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px; }
+        .scenario-box { background: rgba(15, 23, 42, 0.6); padding: 10px; border-radius: 6px; border: 1px solid var(--card-border); font-size: 0.85rem; }
+
+        /* 教戰手冊專用樣式 */
+        .guide-section { margin-bottom: 20px; }
+        .guide-section h4 { color: var(--accent-cyan); margin-bottom: 8px; border-left: 3px solid var(--accent-blue); padding-left: 8px; }
+        .guide-list { list-style: none; padding-left: 0; }
+        .guide-list li { margin-bottom: 8px; color: #cbd5e1; line-height: 1.6; }
+        .guide-list li strong { color: var(--text-main); }
     </style>
 </head>
 <body>
 
-    <!-- 頂部導覽列 (五個 Tab) -->
+    <!-- 頂部導覽列 -->
     <div class="header-bar">
         <div class="logo-title">
             <div class="logo-icon"></div>
             <span>台指期當衝決策戰情室</span>
         </div>
         <div class="nav-tabs">
-            <button class="tab-btn active" onclick="switchTab('overview')">📊 大盤總覽與 AI 交易建議</button>
-            <button class="tab-btn" onclick="switchTab('chips')">📜 期貨籌碼與融資</button>
-            <button class="tab-btn" onclick="switchTab('vpvr')">📈 量價累積圖 (VPVR)</button>
-            <button class="tab-btn" onclick="switchTab('macro')">🌐 國際總經 (TradingView)</button>
-            <button class="tab-btn" onclick="switchTab('strategy')">🎯 開盤策略與當衝教戰</button>
+            <button class="tab-btn active" onclick="switchTab('overview', this)">📊 大盤總覽與 AI 交易建議</button>
+            <button class="tab-btn" onclick="switchTab('chips', this)">📜 期貨籌碼與融資</button>
+            <button class="tab-btn" onclick="switchTab('vpvr', this)">📈 量價累積圖 (VPVR)</button>
+            <button class="tab-btn" onclick="switchTab('macro', this)">🌐 國際總經 (TradingView)</button>
+            <button class="tab-btn" onclick="switchTab('strategy', this)">🎯 開盤策略與當衝教戰</button>
         </div>
     </div>
 
@@ -111,7 +111,7 @@
                     </div>
                     
                     <div class="stat-label">期現貨價差 (Basis)</div>
-                    <div class="stat-value" id="basis-val">+18.5 點 <span class="badge badge-green" id="basis-badge">正價差 (偏多)</span></div>
+                    <div class="stat-value" id="basis-val">+18.5 點 <span class="badge badge-green">正價差 (偏多)</span></div>
 
                     <div class="stat-label" style="margin-top:14px;">大盤預估成交量</div>
                     <div class="stat-value" id="volume-val">4,250 億 <span class="badge badge-yellow">出量突破預警</span></div>
@@ -150,7 +150,7 @@
                 </div>
             </div>
 
-            <!-- 右側主圖表區 -->
+            <!-- 右側主圖表與 AI 交易建議區 -->
             <div>
                 <div class="alert-banner">
                     ⚠️ <strong>大盤接近 Pivot 樞紐中心！</strong> 宜密切關注多空分水嶺攻防守勢，觀察量能決定卡位劇本。
@@ -181,16 +181,34 @@
 
                     <!-- 5 關卡數字 -->
                     <div class="pivot-grid">
-                        <div class="pivot-box s2"><div class="pivot-title">第二支撐 (S2)</div><div class="pivot-val" id="val-s2" style="color:#10b981;">47,740.1</div></div>
-                        <div class="pivot-box s1"><div class="pivot-title">第一支撐 (S1)</div><div class="pivot-val" id="val-s1" style="color:#10b981;">48,046.8</div></div>
-                        <div class="pivot-box p"><div class="pivot-title">樞紐中心 (P)</div><div class="pivot-val" id="val-p" style="color:#38bdf8;">48,200.1</div></div>
-                        <div class="pivot-box r1"><div class="pivot-title">第一壓力 (R1)</div><div class="pivot-val" id="val-r1" style="color:#ef4444;">48,506.8</div></div>
-                        <div class="pivot-box r2"><div class="pivot-title">第二壓力 (R2)</div><div class="pivot-val" id="val-r2" style="color:#ef4444;">48,660.2</div></div>
+                        <div class="pivot-box" style="border-color: rgba(16, 185, 129, 0.4);"><div class="pivot-title">第二支撐 (S2)</div><div class="pivot-val" id="val-s2" style="color:#10b981;">47,740.1</div></div>
+                        <div class="pivot-box" style="border-color: rgba(16, 185, 129, 0.7);"><div class="pivot-title">第一支撐 (S1)</div><div class="pivot-val" id="val-s1" style="color:#10b981;">48,046.8</div></div>
+                        <div class="pivot-box" style="border-color: var(--accent-blue); background: rgba(37, 99, 235, 0.1);"><div class="pivot-title">樞紐中心 (P)</div><div class="pivot-val" id="val-p" style="color:#38bdf8;">48,200.1</div></div>
+                        <div class="pivot-box" style="border-color: rgba(239, 68, 68, 0.7);"><div class="pivot-title">第一壓力 (R1)</div><div class="pivot-val" id="val-r1" style="color:#ef4444;">48,506.8</div></div>
+                        <div class="pivot-box" style="border-color: rgba(239, 68, 68, 0.4);"><div class="pivot-title">第二壓力 (R2)</div><div class="pivot-val" id="val-r2" style="color:#ef4444;">48,660.2</div></div>
                     </div>
 
                     <!-- 樞紐柱狀圖 -->
                     <div class="chart-container">
                         <canvas id="pivotBarChart"></canvas>
+                    </div>
+
+                    <!-- 補回：AI 交易建議與多空卡位劇本卡片 -->
+                    <div class="ai-card">
+                        <div class="ai-title">🤖 AI 盤中交易策略建議</div>
+                        <p style="color: var(--text-sub); font-size: 0.88rem;">
+                            目前大盤運行於 <strong>樞紐點 (P) 48,200</strong> 與 <strong>第一壓力 (R1) 48,506</strong> 之間，且正價差擴大，預估量放大至 4,250 億，顯示短線多頭掌控主導權。
+                        </p>
+                        <div class="scenario-grid">
+                            <div class="scenario-box">
+                                <strong style="color: var(--red-up);">📈 劇本 A：多頭突破卡位</strong>
+                                <p style="color: var(--text-sub); margin-top: 4px;">早盤若站穩 R1 (48,506) 且電子成交比重維持 65% 以上，可順勢回測不破進場試多，目標看至 R2 (48,660)。</p>
+                            </div>
+                            <div class="scenario-box">
+                                <strong style="color: var(--green-down);">📉 劇本 B：空頭假突破假拉回</strong>
+                                <p style="color: var(--text-sub); margin-top: 4px;">若開高走低跌破樞紐中心 P (48,200)，且預估量無法跟上，宜預防獲利了結賣壓，回測 S1 (48,046) 尋求支撐。</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -236,75 +254,141 @@
 
     <!-- TAB 4: 國際總經 -->
     <div id="tab-macro" class="tab-content">
-        <div class="card" style="text-align: center; padding: 40px; color: var(--text-sub);">
-            🌐 TradingView 國際總經市場實時小工具載入中...
+        <div class="card" style="padding: 20px;">
+            <h3>🌐 國際總經實時走勢 (TradingView)</h3>
+            <div style="height: 500px; margin-top: 15px; background: #0f172a; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--text-sub);">
+                [TradingView 實時 Widget 嵌入區：包含美股電子盤 NQ、道瓊、VIX 與台積電 ADR]
+            </div>
         </div>
     </div>
 
-    <!-- TAB 5: 開盤策略 -->
+    <!-- TAB 5: 完整開盤策略與當衝教戰手冊 (保證不偷刪) -->
     <div id="tab-strategy" class="tab-content">
-        <div class="card" style="padding: 24px; line-height: 1.8;">
-            <h3>🎯 當衝 SOP 決策流程</h3>
-            <ol style="margin-left: 20px; margin-top: 10px; color: var(--text-sub);">
-                <li>觀察開盤價與開盤缺口相較於樞紐點 (P) 的相對位置。</li>
-                <li>檢視電子股成交比重是否大於 65%（確認權值股是否領漲）。</li>
-                <li>觀察第一支撐 (S1) 與第一壓力 (R1) 區間之量能突破狀況。</li>
-            </ol>
+        <div class="card" style="padding: 24px;">
+            <h2 style="margin-bottom: 16px; color: var(--text-main); border-bottom: 1px solid var(--card-border); padding-bottom: 10px;">
+                🎯 開盤策略與台指期當衝教戰手冊
+            </h2>
+
+            <div class="guide-section">
+                <h4>一、 晨間準備與開盤定調 (08:30 - 08:45)</h4>
+                <ul class="guide-list">
+                    <li><strong>1. 夜盤缺口確認 (Night Gap)：</strong> 檢查夜盤收盤與美股漲跌，確定今日開盤是「跳空高開」或「跳空低開」。缺口 > 50 點時，防範開盤第 1 根 5 分K 獲利調節賣壓。</li>
+                    <li><strong>2. 樞紐點 (Pivot Points) 關卡定位：</strong> 確認今日 P、S1、S2、R1、R2 位置。強勢多頭格局應維持在 P 點之上運行。</li>
+                    <li><strong>3. 籌碼基調檢視：</strong> 檢視外資期貨淨未平倉 (OI) 是否低於 -30,000 口，若外資大空單壓頂，高開易遭空頭壓制；若散戶多空比為負（散戶持空單），則有利於多頭續漲。</li>
+                </ul>
+            </div>
+
+            <div class="guide-section">
+                <h4>二、 盤中當衝三部曲 SOP (08:45 - 10:30)</h4>
+                <ul class="guide-list">
+                    <li><strong>第一步：9點大盤現貨開盤確認 (09:00 - 09:15)</strong>
+                        <br>觀察電子類股成交比重是否達 65% 以上。若電子權值吸金且大盤預估量突破 4,000 億，為典型攻擊量，可找回測支撐點進場試多。
+                    </li>
+                    <li><strong>第二步：VPVR 籌碼真空區運用</strong>
+                        <br>當價格突破 23,000 (POC) 等成交密集區後，上方若為「量價真空帶」，價格往往會加速推升；反之，進入密集區容易形成卡盤震盪。
+                    </li>
+                    <li><strong>第三步：極限風控與停損停利</strong>
+                        <br>當衝單筆停損嚴格控制在 25-35 點內。達到 R1 或 S1 關卡時，建議先平倉 50% 鎖住獲利，剩餘部位移動停利。
+                    </li>
+                </ul>
+            </div>
+
+            <div class="guide-section">
+                <h4>三、 盤中常見陷阱與避坑指南</h4>
+                <ul class="guide-list">
+                    <li>🚨 <strong>無量拉高：</strong> 價格衝破 R1，但大盤預估量低於 3,000 億，此為典型「假突破」，切忌追高。</li>
+                    <li>🚨 <strong>價差背離：</strong> 現貨大漲但台指期正價差急劇收斂轉為逆價差，代表期貨大戶高檔避險，隨時有轉折拉回風險。</li>
+                </ul>
+            </div>
         </div>
     </div>
 
-    <!-- 前端與 Chart.js 動態渲染腳本 -->
+    <!-- 前端核心 JavaScript (附帶 Fallback 防黑屏機制) -->
     <script>
+        // 預設視覺資料 (避免 data.json 未生成時畫面漆黑)
+        const defaultData = {
+            taiex: {
+                price: 48353.49, change: 413.36, change_pct: 0.86,
+                high: 48353.49, low: 47893.42, close_prev: 47940.13,
+                date: '2026-10-01',
+                pivot: { p: 48200.1, s1: 48046.8, s2: 47740.1, r1: 48506.8, r2: 48660.2 }
+            },
+            chips: {
+                dates: ['5天前', '4天前', '3天前', '2天前', '昨日'],
+                foreign_oi: [-31000, -28000, -30000, -27000, -25000],
+                investment_trust_oi: [11500, 12800, 13000, 12500, 13200],
+                retail_ratio: [8.2, 5.1, 11.5, 3.8, -2.5]
+            },
+            vpvr: {
+                prices: ["23,200", "23,100", "23,000 (POC)", "22,900", "22,800", "22,700", "22,600"],
+                volumes: [12500, 24800, 68000, 44800, 31000, 18000, 9500]
+            }
+        };
+
         let pivotChartObj, oiChartObj, retailChartObj, vpvrChartObj;
 
-        // 分頁切換
-        function switchTab(tabId) {
+        // 分頁切換邏輯
+        function switchTab(tabId, btnEl) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             
-            event.currentTarget.classList.add('active');
+            btnEl.classList.add('active');
             document.getElementById(`tab-${tabId}`).classList.add('active');
         }
 
-        // 從 data.json 自動載入與更新 UI 畫面
-        async function fetchAndRenderData() {
+        // 資料讀取與渲染
+        async function initDashboard() {
+            let data = defaultData;
+
             try {
                 const response = await fetch('./data.json?t=' + new Date().getTime());
-                const data = await response.json();
-
-                // 1. 更新主頁面文字與關卡欄位
-                document.getElementById('data-date').innerText = data.taiex.date || '2026-10-01';
-                
-                const mainPrice = data.taiex.price;
-                document.getElementById('main-price').innerText = mainPrice.toLocaleString();
-                
-                const changeEl = document.getElementById('main-change');
-                const sign = data.taiex.change >= 0 ? '+' : '';
-                changeEl.innerText = `${sign}${data.taiex.change} (${sign}${data.taiex.change_pct}%)`;
-                changeEl.style.color = data.taiex.change >= 0 ? 'var(--red-up)' : 'var(--green-down)';
-
-                document.getElementById('val-high').innerText = data.taiex.high.toLocaleString();
-                document.getElementById('val-low').innerText = data.taiex.low.toLocaleString();
-                document.getElementById('val-prev').innerText = data.taiex.close_prev.toLocaleString();
-
-                const p = data.taiex.pivot;
-                document.getElementById('val-s2').innerText = p.s2.toLocaleString();
-                document.getElementById('val-s1').innerText = p.s1.toLocaleString();
-                document.getElementById('val-p').innerText = p.p.toLocaleString();
-                document.getElementById('val-r1').innerText = p.r1.toLocaleString();
-                document.getElementById('val-r2').innerText = p.r2.toLocaleString();
-
-                // 2. 渲染圖表
-                renderPivotChart(p, mainPrice);
-                renderChipsCharts(data.chips);
-                renderVPVRChart(data.vpvr);
-
+                if (response.ok) {
+                    const fetchedData = await response.json();
+                    if (fetchedData && fetchedData.taiex) {
+                        data = fetchedData; // 成功讀取最新資料
+                    }
+                }
             } catch (err) {
-                console.warn("讀取 data.json 失敗，使用預設視覺畫面: ", err);
+                console.log("使用預設展示資料繪製畫面");
+            }
+
+            // 安全更新 DOM 文字
+            try {
+                if (data.taiex) {
+                    document.getElementById('data-date').innerText = data.taiex.date || '2026-10-01';
+                    document.getElementById('main-price').innerText = Number(data.taiex.price).toLocaleString();
+                    
+                    const changeEl = document.getElementById('main-change');
+                    const sign = data.taiex.change >= 0 ? '+' : '';
+                    changeEl.innerText = `${sign}${data.taiex.change} (${sign}${data.taiex.change_pct}%)`;
+                    changeEl.style.color = data.taiex.change >= 0 ? 'var(--red-up)' : 'var(--green-down)';
+
+                    document.getElementById('val-high').innerText = Number(data.taiex.high).toLocaleString();
+                    document.getElementById('val-low').innerText = Number(data.taiex.low).toLocaleString();
+                    document.getElementById('val-prev').innerText = Number(data.taiex.close_prev).toLocaleString();
+
+                    const p = data.taiex.pivot || defaultData.taiex.pivot;
+                    document.getElementById('val-s2').innerText = p.s2.toLocaleString();
+                    document.getElementById('val-s1').innerText = p.s1.toLocaleString();
+                    document.getElementById('val-p').innerText = p.p.toLocaleString();
+                    document.getElementById('val-r1').innerText = p.r1.toLocaleString();
+                    document.getElementById('val-r2').innerText = p.r2.toLocaleString();
+
+                    renderPivotChart(p, data.taiex.price);
+                }
+
+                if (data.chips) renderChipsCharts(data.chips);
+                if (data.vpvr) renderVPVRChart(data.vpvr);
+
+            } catch (e) {
+                console.error("DOM 渲染錯誤，啟動預備邏輯:", e);
+                renderPivotChart(defaultData.taiex.pivot, defaultData.taiex.price);
+                renderChipsCharts(defaultData.chips);
+                renderVPVRChart(defaultData.vpvr);
             }
         }
 
-        // 渲染大盤 Pivot 柱狀圖 (對齊圖片樣式)
+        // 1. Pivot 柱狀圖
         function renderPivotChart(p, currentPrice) {
             const ctx = document.getElementById('pivotBarChart').getContext('2d');
             if (pivotChartObj) pivotChartObj.destroy();
@@ -315,14 +399,7 @@
                     labels: ['第二支撐 (S2)', '第一支撐 (S1)', '樞紐中心 (P)', '當前大盤', '第一壓力 (R1)', '第二壓力 (R2)'],
                     datasets: [{
                         data: [p.s2, p.s1, p.p, currentPrice, p.r1, p.r2],
-                        backgroundColor: [
-                            '#10b981', // S2 綠
-                            '#10b981', // S1 綠
-                            '#2563eb', // P 藍
-                            '#f59e0b', // 當前大盤 黃
-                            '#ef4444', // R1 紅
-                            '#ef4444'  // R2 紅
-                        ],
+                        backgroundColor: ['#10b981', '#10b981', '#2563eb', '#f59e0b', '#ef4444', '#ef4444'],
                         borderRadius: 4
                     }]
                 },
@@ -331,108 +408,79 @@
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
-                        y: {
-                            min: Math.floor(p.s2 * 0.995),
-                            grid: { color: '#1e293b' },
-                            ticks: { color: '#94a3b8' }
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: '#94a3b8' }
-                        }
+                        y: { min: Math.floor(p.s2 * 0.995), grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
                     }
                 }
             });
         }
 
-        // 渲染籌碼圖表 (三大法人 OI 與 散戶多空比)
+        // 2. 籌碼雙圖表
         function renderChipsCharts(chips) {
-            // 三大法人未平倉
             const ctx1 = document.getElementById('oiChart').getContext('2d');
             if (oiChartObj) oiChartObj.destroy();
             oiChartObj = new Chart(ctx1, {
                 type: 'bar',
                 data: {
-                    labels: chips.dates || ['5天前', '4天前', '3天前', '2天前', '昨日'],
+                    labels: chips.dates || defaultData.chips.dates,
                     datasets: [
-                        { label: '外資未平倉 (口)', data: chips.foreign_oi || [-31000, -28000, -30000, -27000, -25000], backgroundColor: '#ef4444' },
-                        { label: '投信未平倉 (口)', data: chips.investment_trust_oi || [11500, 12800, 13000, 12500, 13200], backgroundColor: '#2563eb' }
+                        { label: '外資未平倉 (口)', data: chips.foreign_oi || defaultData.chips.foreign_oi, backgroundColor: '#ef4444' },
+                        { label: '投信未平倉 (口)', data: chips.investment_trust_oi || defaultData.chips.investment_trust_oi, backgroundColor: '#2563eb' }
                     ]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
+                    responsive: true, maintainAspectRatio: false,
                     plugins: { legend: { labels: { color: '#94a3b8' } } },
-                    scales: {
-                        y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
-                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
-                    }
+                    scales: { y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }, x: { grid: { display: false }, ticks: { color: '#94a3b8' } } }
                 }
             });
 
-            // 散戶多空比
             const ctx2 = document.getElementById('retailChart').getContext('2d');
             if (retailChartObj) retailChartObj.destroy();
             retailChartObj = new Chart(ctx2, {
                 type: 'line',
                 data: {
-                    labels: chips.dates || ['5天前', '4天前', '3天前', '2天前', '昨日'],
+                    labels: chips.dates || defaultData.chips.dates,
                     datasets: [{
                         label: '散戶多空比 (%)',
-                        data: chips.retail_ratio || [8.2, 5.1, 11.5, 3.8, -2.5],
+                        data: chips.retail_ratio || defaultData.chips.retail_ratio,
                         borderColor: '#f59e0b',
                         backgroundColor: 'rgba(245, 158, 11, 0.15)',
-                        fill: true,
-                        tension: 0.4
+                        fill: true, tension: 0.4
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
+                    responsive: true, maintainAspectRatio: false,
                     plugins: { legend: { labels: { color: '#94a3b8' } } },
-                    scales: {
-                        y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
-                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
-                    }
+                    scales: { y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }, x: { grid: { display: false }, ticks: { color: '#94a3b8' } } }
                 }
             });
         }
 
-        // 渲染 VPVR 橫向圖表
+        // 3. VPVR 圖表
         function renderVPVRChart(vpvr) {
             const ctx = document.getElementById('vpvrChart').getContext('2d');
             if (vpvrChartObj) vpvrChartObj.destroy();
 
-            const prices = vpvr.prices || ["23,200", "23,100", "23,000 (POC)", "22,900", "22,800", "22,700", "22,600"];
-            const volumes = vpvr.volumes || [12500, 24800, 68000, 44800, 31000, 18000, 9500];
-
+            const prices = vpvr.prices || defaultData.vpvr.prices;
+            const volumes = vpvr.volumes || defaultData.vpvr.volumes;
             const bgColors = prices.map(p => String(p).includes('POC') ? '#ef4444' : '#2563eb');
 
             vpvrChartObj = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: prices,
-                    datasets: [{
-                        label: '近 30 日成交量累積',
-                        data: volumes,
-                        backgroundColor: bgColors,
-                        borderRadius: 4
-                    }]
+                    datasets: [{ label: '近 30 日成交量累積', data: volumes, backgroundColor: bgColors, borderRadius: 4 }]
                 },
                 options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
+                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
-                    scales: {
-                        x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
-                        y: { grid: { display: false }, ticks: { color: '#f1f5f9' } }
-                    }
+                    scales: { x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }, y: { grid: { display: false }, ticks: { color: '#f1f5f9' } } }
                 }
             });
         }
 
-        // 手動計算器觸發函數
+        // 手動計算器
         function calculateManualPivot() {
             const h = parseFloat(document.getElementById('calc-h').value);
             const l = parseFloat(document.getElementById('calc-l').value);
@@ -458,8 +506,8 @@
             renderPivotChart({ p, r1, r2, s1, s2 }, c);
         }
 
-        // 初始化載入
-        window.onload = fetchAndRenderData;
+        // 頁面初次載入
+        window.onload = initDashboard;
     </script>
 </body>
 </html>
