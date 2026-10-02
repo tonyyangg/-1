@@ -1,5 +1,6 @@
 name: Update Market Data
-
+permissions:
+  contents: write
 on:
   schedule:
     - cron: '0 6,10 * * 1-5'
