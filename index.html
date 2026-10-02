@@ -268,28 +268,43 @@
                 
                 const data = await response.json();
                 
-                document.getElementById('api-status').innerText = '✓ 數據即時更新成功';
-                document.getElementById('api-status').style.color = 'var(--green-down)';
+                // 輔助安全賦值機制，防止 ID 不存在時報錯崩潰
+                const setSafeText = (id, text) => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerText = text;
+                };
 
-                // --- 1. 即時指標 (相容多種 JSON 欄位命名) ---
+                const setSafeHTML = (id, html) => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerHTML = html;
+                };
+
+                setSafeText('api-status', '✓ 數據即時更新成功');
+                const apiStatus = document.getElementById('api-status');
+                if (apiStatus) apiStatus.style.color = 'var(--green-down)';
+
+                // --- 1. 即時指標 (相容多種 JSON 結構與欄位名稱) ---
                 const real = data.realtime || data.indicators || data || {};
                 const basis = Number(real.basis ?? real.price_basis ?? 0);
                 const vol = Number(real.estimated_volume ?? real.volume ?? 0);
                 const gap = Number(real.night_gap ?? real.gap ?? 0);
                 const elec = Number(real.elec_share ?? real.elec_pct ?? 0);
 
-                document.getElementById('basis-val').innerText = `${basis >= 0 ? '+' : ''}${basis} 點`;
-                document.getElementById('basis-badge').innerText = basis >= 0 ? '正價差' : '逆價差';
-                document.getElementById('basis-badge').className = `badge ${basis >= 0 ? 'badge-green' : 'badge-red'}`;
+                setSafeText('basis-val', `${basis >= 0 ? '+' : ''}${basis} 點`);
+                setSafeText('basis-badge', basis >= 0 ? '正價差' : '逆價差');
+                
+                const basisBadge = document.getElementById('basis-badge');
+                if (basisBadge) basisBadge.className = `badge ${basis >= 0 ? 'badge-green' : 'badge-red'}`;
 
-                document.getElementById('volume-val').innerText = vol ? `${vol} 億` : '--';
-                if (vol) document.getElementById('volume-badge').innerText = vol > 3800 ? '爆量' : '縮量';
+                setSafeText('volume-val', vol ? `${vol} 億` : '--');
+                if (vol) setSafeText('volume-badge', vol > 3800 ? '爆量' : '縮量');
 
-                document.getElementById('gap-val').innerText = `${gap >= 0 ? '+' : ''}${gap} 點`;
-                document.getElementById('gap-badge').innerText = gap >= 0 ? '高開' : '低開';
+                setSafeText('gap-val', `${gap >= 0 ? '+' : ''}${gap} 點`);
+                setSafeText('gap-badge', gap >= 0 ? '高開' : '低開');
 
-                document.getElementById('elec-pct').innerText = `${elec}%`;
-                document.getElementById('elec-bar').style.width = `${Math.min(elec, 100)}%`;
+                setSafeText('elec-pct', `${elec}%`);
+                const elecBar = document.getElementById('elec-bar');
+                if (elecBar) elecBar.style.width = `${Math.min(elec, 100)}%`;
 
                 // --- 2. 大盤與 Pivot 關卡 ---
                 const t = data.taiex || data.index || data || {};
@@ -297,26 +312,28 @@
                 const change = Number(t.change ?? 0);
                 const changePct = Number(t.change_pct ?? t.change_percent ?? 0);
 
-                document.getElementById('data-date').innerText = t.date || new Date().toLocaleTimeString();
-                document.getElementById('main-price').innerText = price ? price.toLocaleString() : '0.00';
+                setSafeText('data-date', t.date || new Date().toLocaleTimeString());
+                setSafeText('main-price', price ? price.toLocaleString() : '0.00');
                 
                 const changeEl = document.getElementById('main-change');
-                const sign = change >= 0 ? '+' : '';
-                changeEl.innerText = `${sign}${change} (${sign}${changePct}%)`;
-                changeEl.style.color = change >= 0 ? 'var(--red-up)' : 'var(--green-down)';
+                if (changeEl) {
+                    const sign = change >= 0 ? '+' : '';
+                    changeEl.innerText = `${sign}${change} (${sign}${changePct}%)`;
+                    changeEl.style.color = change >= 0 ? 'var(--red-up)' : 'var(--green-down)';
+                }
 
-                document.getElementById('val-high').innerText = t.high ? Number(t.high).toLocaleString() : '--';
-                document.getElementById('val-low').innerText = t.low ? Number(t.low).toLocaleString() : '--';
-                document.getElementById('val-prev').innerText = t.close_prev ? Number(t.close_prev).toLocaleString() : '--';
+                setSafeText('val-high', t.high ? Number(t.high).toLocaleString() : '--');
+                setSafeText('val-low', t.low ? Number(t.low).toLocaleString() : '--');
+                setSafeText('val-prev', t.close_prev ? Number(t.close_prev).toLocaleString() : '--');
 
                 const p = t.pivot || data.pivot || {};
                 const s2 = Number(p.s2 ?? 0), s1 = Number(p.s1 ?? 0), pivotP = Number(p.p ?? 0), r1 = Number(p.r1 ?? 0), r2 = Number(p.r2 ?? 0);
 
-                document.getElementById('val-s2').innerText = s2 ? s2.toLocaleString() : '--';
-                document.getElementById('val-s1').innerText = s1 ? s1.toLocaleString() : '--';
-                document.getElementById('val-p').innerText = pivotP ? pivotP.toLocaleString() : '--';
-                document.getElementById('val-r1').innerText = r1 ? r1.toLocaleString() : '--';
-                document.getElementById('val-r2').innerText = r2 ? r2.toLocaleString() : '--';
+                setSafeText('val-s2', s2 ? s2.toLocaleString() : '--');
+                setSafeText('val-s1', s1 ? s1.toLocaleString() : '--');
+                setSafeText('val-p', pivotP ? pivotP.toLocaleString() : '--');
+                setSafeText('val-r1', r1 ? r1.toLocaleString() : '--');
+                setSafeText('val-r2', r2 ? r2.toLocaleString() : '--');
 
                 if (pivotP > 0) {
                     renderPivotChart({ s2, s1, p: pivotP, r1, r2 }, price);
@@ -324,10 +341,10 @@
 
                 // --- 3. AI 策略建議 ---
                 const ai = data.ai_analysis || data.ai || {};
-                document.getElementById('ai-alert-banner').innerHTML = `⚠️ <strong>AI 盤勢提醒：</strong> ${ai.alert_banner || ai.alert || '今日盤勢區間震盪，請注意風控'}`;
-                document.getElementById('ai-summary-text').innerHTML = ai.summary || ai.description || '目前數據分析完成。';
-                document.getElementById('ai-scenario-a').innerText = ai.scenario_a || ai.plan_a || '突破站穩 P 點追多';
-                document.getElementById('ai-scenario-b').innerText = ai.scenario_b || ai.plan_b || '跌破 S1 關卡停損';
+                setSafeHTML('ai-alert-banner', `⚠️ <strong>AI 盤勢提醒：</strong> ${ai.alert_banner || ai.alert || '今日盤勢區間震盪，請注意風控'}`);
+                setSafeHTML('ai-summary-text', ai.summary || ai.description || '目前數據分析完成。');
+                setSafeText('ai-scenario-a', ai.scenario_a || ai.plan_a || '突破站穩 P 點追多');
+                setSafeText('ai-scenario-b', ai.scenario_b || ai.plan_b || '跌破 S1 關卡停損');
 
                 // --- 4. 籌碼與 VPVR 圖表（獨立容錯處理）---
                 if (data.chips && typeof data.chips === 'object') {
@@ -339,8 +356,11 @@
 
             } catch (err) {
                 console.error("解析 JSON 時發生錯誤:", err);
-                document.getElementById('api-status').innerText = '❌ data.json 解析失敗，請檢查格式';
-                document.getElementById('api-status').style.color = 'var(--red-up)';
+                const apiStatus = document.getElementById('api-status');
+                if (apiStatus) {
+                    apiStatus.innerText = '❌ data.json 解析失敗，請檢查格式';
+                    apiStatus.style.color = 'var(--red-up)';
+                }
             }
         }
 
@@ -458,11 +478,11 @@
             const r2 = p + (h - l);
             const s2 = p - (h - l);
 
-            document.getElementById('val-p').innerText = p.toFixed(1);
-            document.getElementById('val-r1').innerText = r1.toFixed(1);
-            document.getElementById('val-s1').innerText = s1.toFixed(1);
-            document.getElementById('val-r2').innerText = r2.toFixed(1);
-            document.getElementById('val-s2').innerText = s2.toFixed(1);
+            setSafeText('val-p', p.toFixed(1));
+            setSafeText('val-r1', r1.toFixed(1));
+            setSafeText('val-s1', s1.toFixed(1));
+            setSafeText('val-r2', r2.toFixed(1));
+            setSafeText('val-s2', s2.toFixed(1));
 
             renderPivotChart({ p, r1, r2, s1, s2 }, c);
         }
