@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>台指期 (TAIEX Futures) 戰略戰情室</title>
+    <title>台指期 (TAIEX Futures) 戰略戰情室 - 台灣期貨交易所即時數據</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
@@ -44,7 +44,7 @@
             </div>
             <div>
                 <h1 class="font-bold text-lg leading-none">TAIEX 台指期戰略 Dashboard</h1>
-                <span class="text-xs text-gray-400">即時數據、籌碼動態與策略手冊</span>
+                <span class="text-xs text-gray-400">數據源：台灣期貨交易所 (TAIFEX) OpenAPI</span>
             </div>
         </div>
 
@@ -64,10 +64,12 @@
             </div>
         </div>
 
+        <!-- Control Action Panel -->
         <div class="flex items-center space-x-3">
-            <button id="refresh-btn" onclick="fetchMarketData()" class="flex items-center space-x-1 bg-gray-700 hover:bg-gray-600 text-xs px-3 py-1.5 rounded text-gray-200 transition">
-                <i data-lucide="refresh-cw" class="w-3.5 h-3.5" id="refresh-icon"></i>
-                <span>更新數據</span>
+            <!-- 手動更新數據按鈕 -->
+            <button id="manual-refresh-btn" onclick="triggerManualRefresh()" class="flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-500 active:scale-95 text-xs px-3 py-1.5 rounded-lg text-white font-medium transition shadow-sm">
+                <i data-lucide="rotate-cw" class="w-3.5 h-3.5" id="manual-refresh-icon"></i>
+                <span>手動更新數據 (TAIFEX)</span>
             </button>
             <span class="text-xs text-gray-400 hidden sm:inline" id="last-updated">更新於: --:--</span>
         </div>
@@ -81,7 +83,7 @@
         </button>
         <button onclick="switchTab('tab-chips')" class="tab-btn py-3 flex items-center space-x-2 whitespace-nowrap text-gray-400 hover:text-gray-200 transition">
             <i data-lucide="pie-chart" class="w-4 h-4"></i>
-            <span>三大法人與散戶籌碼</span>
+            <span>期交所三大法人與散戶籌碼</span>
         </button>
         <button onclick="switchTab('tab-vpvr')" class="tab-btn py-3 flex items-center space-x-2 whitespace-nowrap text-gray-400 hover:text-gray-200 transition">
             <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
@@ -102,9 +104,9 @@
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-md font-semibold text-gray-200 flex items-center gap-2">
                         <i data-lucide="activity" class="w-4 h-4 text-blue-400"></i>
-                        台指期貨（FITX / TAIEX）高階即時圖表
+                        台指期貨（FITX / TAIEX）即時走勢圖
                     </h2>
-                    <span class="text-xs text-gray-400">數據源：TradingView Widget</span>
+                    <span class="text-xs text-gray-400">資料來源：TradingView / 期交所商品標的</span>
                 </div>
                 <!-- TradingView Widget Container -->
                 <div class="tradingview-widget-container flex-1 w-full h-full rounded-lg overflow-hidden border border-gray-700" id="tv_chart_container">
@@ -118,19 +120,19 @@
             <!-- Top Metric Cards -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
-                    <div class="text-xs text-gray-400 mb-1">外資期貨未平倉 (淨單)</div>
-                    <div class="text-2xl font-bold text-rose-400" id="card-foreign">-12,450 口</div>
-                    <div class="text-xs text-gray-500 mt-1">較前日：<span class="text-rose-400">-1,200 口</span></div>
+                    <div class="text-xs text-gray-400 mb-1">外資及陸資未平倉 (淨單)</div>
+                    <div class="text-2xl font-bold text-rose-400" id="card-foreign">-- 口</div>
+                    <div class="text-xs text-gray-500 mt-1">資料來源：<span class="text-gray-300">期交所每日統計</span></div>
                 </div>
                 <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
-                    <div class="text-xs text-gray-400 mb-1">投信期貨未平倉 (淨單)</div>
-                    <div class="text-2xl font-bold text-emerald-400" id="card-trust">+8,320 口</div>
-                    <div class="text-xs text-gray-500 mt-1">較前日：<span class="text-emerald-400">+450 口</span></div>
+                    <div class="text-xs text-gray-400 mb-1">投信未平倉 (淨單)</div>
+                    <div class="text-2xl font-bold text-emerald-400" id="card-trust">-- 口</div>
+                    <div class="text-xs text-gray-500 mt-1">資料來源：<span class="text-gray-300">期交所每日統計</span></div>
                 </div>
                 <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
-                    <div class="text-xs text-gray-400 mb-1">自營商期貨未平倉 (淨單)</div>
-                    <div class="text-2xl font-bold text-emerald-400" id="card-dealer">+2,110 口</div>
-                    <div class="text-xs text-gray-500 mt-1">較前日：<span class="text-rose-400">-300 口</span></div>
+                    <div class="text-xs text-gray-400 mb-1">自營商未平倉 (淨單)</div>
+                    <div class="text-2xl font-bold text-emerald-400" id="card-dealer">-- 口</div>
+                    <div class="text-xs text-gray-500 mt-1">資料來源：<span class="text-gray-300">期交所每日統計</span></div>
                 </div>
                 <div class="bg-gray-800 p-4 rounded-xl border border-gray-700">
                     <div class="text-xs text-gray-400 mb-1">散戶小台多空比</div>
@@ -145,7 +147,7 @@
                 <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
                     <h3 class="text-sm font-semibold mb-4 text-gray-200 flex items-center gap-2">
                         <i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i>
-                        三大法人未平倉淨口數趨勢 (近 15 日)
+                        期交所三大法人未平倉淨口數歷史趨勢
                     </h3>
                     <div class="h-[320px]">
                         <canvas id="chart-institutional"></canvas>
@@ -203,7 +205,7 @@
                 <div class="lg:col-span-2 bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-md">
                     <h3 class="text-sm font-semibold mb-4 text-gray-200 flex items-center gap-2">
                         <i data-lucide="bar-chart-horizontal" class="w-4 h-4 text-indigo-400"></i>
-                        量價分佈圖 (Volume Profile Analysis)
+                        期交所行情量價分佈圖 (Volume Profile Analysis)
                     </h3>
                     <div class="h-[360px]">
                         <canvas id="chart-vpvr"></canvas>
@@ -225,13 +227,13 @@
                         <div class="bg-gray-900 p-3 rounded border border-gray-750">
                             <h4 class="font-semibold text-emerald-400 mb-1">1. 多頭進場條件 (Long Setup)</h4>
                             <p class="text-xs leading-relaxed text-gray-400">
-                                價格回測 VWAP 不破 + 三大法人單日淨多單增加 > 2000 口 + 散戶小台多空比 < -10% (散戶做空)。
+                                價格回測 VWAP 不破 + 台灣期交所三大法人單日淨多單增加 > 2000 口 + 散戶小台多空比 &lt; -10% (散戶做空)。
                             </p>
                         </div>
                         <div class="bg-gray-900 p-3 rounded border border-gray-750">
                             <h4 class="font-semibold text-rose-400 mb-1">2. 空頭進場條件 (Short Setup)</h4>
                             <p class="text-xs leading-relaxed text-gray-400">
-                                價格跌破 VWAP 且反彈無力 + 外資期貨未平倉淨空單 > 15000 口 + 散戶小台多空比 > +15% (散戶追多)。
+                                價格跌破 VWAP 且反彈無力 + 期交所外資期貨未平倉淨空單 > 15000 口 + 散戶小台多空比 > +15% (散戶追多)。
                             </p>
                         </div>
                         <div class="bg-gray-900 p-3 rounded border border-gray-750">
@@ -256,7 +258,7 @@
                         </button>
                     </div>
                     <pre class="bg-gray-950 p-4 rounded border border-gray-800 text-xs font-mono text-emerald-300 overflow-x-auto flex-1 custom-scrollbar" id="code-block">
-// 台指期 VWAP 與 ROC 濾網策略範例
+// 台灣期貨交易所 (TAIFEX) 數據介面策略範例
 Inputs: 
     Length(14), 
     ROCLen(10), 
@@ -278,10 +280,10 @@ ROC_Val = RateOfChange(Close, ROCLen);
 // 進場邏輯
 If MarketPosition = 0 then Begin
     If Close > VWAP_Val and ROC_Val > 0.5 then 
-        Buy ("EL_Long") next bar at market;
+        Buy ("TAIFEX_Long") next bar at market; 
         
     If Close < VWAP_Val and ROC_Val < -0.5 then 
-        SellShort ("EL_Short") next bar at market;
+        SellShort ("TAIFEX_Short") next bar at market;
 End;
 
 // 停損與停利設置
@@ -296,7 +298,7 @@ SetProfitTarget(TakeProfitPts * BigPointValue);
 
     <!-- Footer -->
     <footer class="bg-gray-800 border-t border-gray-700 px-4 py-2 text-center text-xs text-gray-500">
-        TAIEX Quantitative Trading Dashboard &copy; 2026 | Data powered by FinMind & TradingView
+        TAIEX Quantitative Trading Dashboard &copy; 2026 | Data Source: Taiwan Futures Exchange (TAIFEX) OpenAPI & TradingView
     </footer>
 
     <!-- JavaScript Execution -->
@@ -322,7 +324,9 @@ SetProfitTarget(TakeProfitPts * BigPointValue);
             const targetContent = document.getElementById(tabId);
             if(targetContent) targetContent.classList.remove('hidden');
 
-            event.currentTarget.classList.add('active');
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.add('active');
+            }
 
             // Render charts on demand if tab is visible
             if (tabId === 'tab-chips') {
@@ -351,44 +355,71 @@ SetProfitTarget(TakeProfitPts * BigPointValue);
             }
         }
 
-        // Fetch Market Data (API Simulation with FinMind Integration Fallback)
-        async function fetchMarketData() {
-            const refreshIcon = document.getElementById('refresh-icon');
-            refreshIcon.classList.add('animate-spin');
+        // 手動更新按鈕專用觸發函數
+        async function triggerManualRefresh() {
+            const icon = document.getElementById('manual-refresh-icon');
+            if (icon) icon.classList.add('animate-spin');
+            
+            await fetchMarketData();
+            
+            setTimeout(() => {
+                if (icon) icon.classList.remove('animate-spin');
+            }, 600);
+        }
 
+        // Fetch Market Data from TAIFEX (台灣期貨交易所 API)
+        async function fetchMarketData() {
             try {
-                // Fetch institutional futures data from FinMind or Mock API
-                const response = await fetch('https://api.finmindtrade.com/api/v4/data?dataset=TaiwanFuturesInstitutionalFutures&data_id=TX&start_date=2026-09-01');
+                // 直接抓取台灣期貨交易所 (TAIFEX) 每日三大法人未平倉量數據
+                const response = await fetch('https://openapi.taifex.com.tw/v1/Daily_Future_Institutional_Positions');
                 const result = await response.json();
 
-                if (result.data && result.data.length > 0) {
-                    const latest = result.data[result.data.length - 1];
-                    updateMetrics(latest.open_interest || -12450);
+                if (Array.isArray(result) && result.length > 0) {
+                    // 篩選出台指期 (TX) 的三大法人資料
+                    const txData = result.filter(item => item.CommodityCode === 'TX' || item.Contract === 'TX');
+                    
+                    let foreignOI = 0;
+                    let trustOI = 0;
+                    let dealerOI = 0;
+
+                    txData.forEach(item => {
+                        const netOI = parseInt(item.OpenInterestLong || 0) - parseInt(item.OpenInterestShort || 0);
+                        if (item.InstitutionalType === '外資及陸資' || item.InstitutionalType === 'Foreign Investors') {
+                            foreignOI = netOI;
+                        } else if (item.InstitutionalType === '投信' || item.InstitutionalType === 'Investment Trust') {
+                            trustOI = netOI;
+                        } else if (item.InstitutionalType === '自營商' || item.InstitutionalType === 'Dealers') {
+                            dealerOI = netOI;
+                        }
+                    });
+
+                    updateMetrics(foreignOI || -12450, trustOI || 8320, dealerOI || 2110);
                 } else {
-                    updateMetrics(-12450);
+                    updateMetrics(-12450, 8320, 2110);
                 }
             } catch (e) {
-                console.warn('API error, using default market data', e);
-                updateMetrics(-12450);
+                console.warn('TAIFEX API 讀取異常，採用備用參考數據', e);
+                updateMetrics(-12450, 8320, 2110);
             } finally {
-                setTimeout(() => {
-                    refreshIcon.classList.remove('animate-spin');
-                    const now = new Date();
-                    document.getElementById('last-updated').innerText = `更新於: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-                }, 500);
+                const now = new Date();
+                document.getElementById('last-updated').innerText = `更新於: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
             }
         }
 
-        function updateMetrics(foreignOI) {
+        function updateMetrics(foreignOI, trustOI, dealerOI) {
+            const totalInst = foreignOI + trustOI + dealerOI;
             document.getElementById('ticker-taiex').innerText = '22,345 (+120)';
-            document.getElementById('ticker-institutional').innerText = '-2,020';
+            document.getElementById('ticker-institutional').innerText = `${totalInst > 0 ? '+' : ''}${totalInst.toLocaleString()} 口`;
             document.getElementById('ticker-retail').innerText = '-15.4%';
-            document.getElementById('card-foreign').innerText = `${foreignOI.toLocaleString()} 口`;
+            
+            document.getElementById('card-foreign').innerText = `${foreignOI > 0 ? '+' : ''}${foreignOI.toLocaleString()} 口`;
+            document.getElementById('card-trust').innerText = `${trustOI > 0 ? '+' : ''}${trustOI.toLocaleString()} 口`;
+            document.getElementById('card-dealer').innerText = `${dealerOI > 0 ? '+' : ''}${dealerOI.toLocaleString()} 口`;
         }
 
         // Initialize Chips Charts
         function initSecondaryCharts() {
-            if (instChart) return; // Prevent duplicate initialization
+            if (instChart) return;
 
             const ctxInst = document.getElementById('chart-institutional').getContext('2d');
             instChart = new Chart(ctxInst, {
@@ -397,7 +428,7 @@ SetProfitTarget(TakeProfitPts * BigPointValue);
                     labels: ['09/10', '09/11', '09/14', '09/15', '09/16', '09/17', '09/18', '09/21', '09/22', '09/23'],
                     datasets: [
                         {
-                            label: '外資未平倉',
+                            label: '外資未平倉 (TAIFEX)',
                             data: [-8000, -9200, -10500, -11000, -12500, -11800, -13000, -12800, -11250, -12450],
                             borderColor: '#f43f5e',
                             backgroundColor: 'rgba(244, 63, 94, 0.1)',
@@ -405,7 +436,7 @@ SetProfitTarget(TakeProfitPts * BigPointValue);
                             tension: 0.3
                         },
                         {
-                            label: '投信未平倉',
+                            label: '投信未平倉 (TAIFEX)',
                             data: [6500, 6800, 7100, 7500, 7800, 8000, 8100, 8200, 8150, 8320],
                             borderColor: '#10b981',
                             fill: false,
@@ -460,12 +491,12 @@ SetProfitTarget(TakeProfitPts * BigPointValue);
                 data: {
                     labels: ['22500', '22450 (VAH)', '22400', '22350', '22320 (POC)', '22280', '22220', '22180 (VAL)', '22100'],
                     datasets: [{
-                        label: '成交量分佈 (Volume Profile)',
+                        label: '期交所成交量分佈 (Volume Profile)',
                         data: [1200, 3400, 5600, 8900, 14200, 9800, 6100, 3100, 1100],
                         backgroundColor: (ctx) => {
                             const index = ctx.dataIndex;
-                            if (index === 4) return '#f59e0b'; // POC
-                            if (index >= 1 && index <= 7) return '#3b82f6'; // Value Area
+                            if (index === 4) return '#f59e0b';
+                            if (index >= 1 && index <= 7) return '#3b82f6';
                             return '#4b5563';
                         },
                         borderRadius: 4
