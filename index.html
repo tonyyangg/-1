@@ -247,7 +247,11 @@
     <div id="tab-strategy" class="tab-content">
         <div class="card" style="padding: 24px;">
             <h2 style="margin-bottom: 16px;">🎯 開盤策略與台指期當衝教戰手冊</h2>
-            <p>1. 確認 Night Gap 缺口與 P 點支撐。<br>2. 留意開盤前 15 分鐘電子股成交比重與預估量變化。</p>
+            <p style="line-height: 1.8; color: var(--text-sub);">
+                1. 觀測夜盤 Gap 缺口與 Pivot P 點位置，判定開盤屬於強勢開高還是多頭震盪。<br>
+                2. 開盤前 15 分鐘觀察電子股佔比，若維持 65% 以上，有利於大盤維持強勢。<br>
+                3. 若價格突破 R1 或跌破 S1，請務必嚴格執行事先規劃的止損標準。
+            </p>
         </div>
     </div>
 
@@ -263,10 +267,10 @@
 
         async function initDashboard() {
             try {
-                // 使用快取破壞參數 (Cache Buster)，強迫瀏覽器讀取最新的 data.json
+                // 快取破壞參數 (Cache Buster)，防範瀏覽器快取舊資料
                 const cacheBuster = `?v=${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
                 
-                // 【已修正】補齊語法與正確逗號
+                // 抓取伺服器上的 data.json
                 const response = await fetch('/-1/data.json' + cacheBuster, {
                     headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
                 });
@@ -364,7 +368,7 @@
                 console.error("解析 JSON 時發生錯誤:", err);
                 const apiStatus = document.getElementById('api-status');
                 if (apiStatus) {
-                    apiStatus.innerText = '❌ 讀取失敗，請確認 data.json 格式或 GitHub Pages 更新狀態';
+                    apiStatus.innerText = '❌ 讀取失敗，請確認 data.json 格式或路徑';
                     apiStatus.style.color = 'var(--red-up)';
                 }
             }
